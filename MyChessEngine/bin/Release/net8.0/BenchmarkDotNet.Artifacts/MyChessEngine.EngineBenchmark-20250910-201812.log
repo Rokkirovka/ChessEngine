@@ -1,0 +1,141 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 1 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1/" /p:OutDir="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0/" /p:OutputPath="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0/" /p:PublishDir="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\publish/" in D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1
+// command took 0.91 sec and exited with 0
+// start dotnet  build -c Release --no-restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1/" /p:OutDir="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0/" /p:OutputPath="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0/" /p:PublishDir="D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\publish/" --output "D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0/" in D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1
+// command took 5.89 sec and exited with 0
+// ***** Done, took 00:00:06 (6.87 sec)   *****
+// Found 1 benchmarks:
+//   EngineBenchmark.FirstMoveBenchmark: DefaultJob
+
+Setup power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: Высокая производительность)
+// **************************
+// Benchmark: EngineBenchmark.FirstMoveBenchmark: DefaultJob
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet MyChessEngine-DefaultJob-1.dll --anonymousPipes 1472 1456 --benchmarkName MyChessEngine.EngineBenchmark.FirstMoveBenchmark --job Default --benchmarkId 0 in D:\RiderProjects\MyChessEngine\MyChessEngine\bin\Release\net8.0\MyChessEngine-DefaultJob-1\bin\Release\net8.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.15.2
+// Runtime=.NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256
+// Job: DefaultJob
+
+OverheadJitting  1: 1 op, 114400.00 ns, 114.4000 us/op
+WorkloadJitting  1: 1 op, 556738500.00 ns, 556.7385 ms/op
+
+OverheadJitting  2: 1 op, 500.00 ns, 500.0000 ns/op
+WorkloadJitting  2: 1 op, 305666100.00 ns, 305.6661 ms/op
+
+WorkloadPilot    1: 2 op, 603154600.00 ns, 301.5773 ms/op
+
+OverheadWarmup   1: 2 op, 600.00 ns, 300.0000 ns/op
+OverheadWarmup   2: 2 op, 300.00 ns, 150.0000 ns/op
+OverheadWarmup   3: 2 op, 300.00 ns, 150.0000 ns/op
+OverheadWarmup   4: 2 op, 100.00 ns, 50.0000 ns/op
+OverheadWarmup   5: 2 op, 300.00 ns, 150.0000 ns/op
+OverheadWarmup   6: 2 op, 200.00 ns, 100.0000 ns/op
+
+// BeforeActualRun
+WorkloadActual   1: 2 op, 610380900.00 ns, 305.1905 ms/op
+WorkloadActual   2: 2 op, 605452300.00 ns, 302.7262 ms/op
+WorkloadActual   3: 2 op, 602167500.00 ns, 301.0838 ms/op
+WorkloadActual   4: 2 op, 609332100.00 ns, 304.6661 ms/op
+WorkloadActual   5: 2 op, 601953400.00 ns, 300.9767 ms/op
+WorkloadActual   6: 2 op, 628365200.00 ns, 314.1826 ms/op
+WorkloadActual   7: 2 op, 650547100.00 ns, 325.2736 ms/op
+WorkloadActual   8: 2 op, 617411600.00 ns, 308.7058 ms/op
+WorkloadActual   9: 2 op, 602051400.00 ns, 301.0257 ms/op
+WorkloadActual  10: 2 op, 598381500.00 ns, 299.1908 ms/op
+WorkloadActual  11: 2 op, 601257400.00 ns, 300.6287 ms/op
+WorkloadActual  12: 2 op, 604838600.00 ns, 302.4193 ms/op
+WorkloadActual  13: 2 op, 602367400.00 ns, 301.1837 ms/op
+WorkloadActual  14: 2 op, 599931800.00 ns, 299.9659 ms/op
+WorkloadActual  15: 2 op, 600852000.00 ns, 300.4260 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 2 op, 610380900.00 ns, 305.1905 ms/op
+WorkloadResult   2: 2 op, 605452300.00 ns, 302.7262 ms/op
+WorkloadResult   3: 2 op, 602167500.00 ns, 301.0838 ms/op
+WorkloadResult   4: 2 op, 609332100.00 ns, 304.6661 ms/op
+WorkloadResult   5: 2 op, 601953400.00 ns, 300.9767 ms/op
+WorkloadResult   6: 2 op, 617411600.00 ns, 308.7058 ms/op
+WorkloadResult   7: 2 op, 602051400.00 ns, 301.0257 ms/op
+WorkloadResult   8: 2 op, 598381500.00 ns, 299.1908 ms/op
+WorkloadResult   9: 2 op, 601257400.00 ns, 300.6287 ms/op
+WorkloadResult  10: 2 op, 604838600.00 ns, 302.4193 ms/op
+WorkloadResult  11: 2 op, 602367400.00 ns, 301.1837 ms/op
+WorkloadResult  12: 2 op, 599931800.00 ns, 299.9659 ms/op
+WorkloadResult  13: 2 op, 600852000.00 ns, 300.4260 ms/op
+// GC:  233 3 0 1465139808 2
+// Threading:  0 0 2
+
+// AfterAll
+// Benchmark Process 34704 has exited with code 0.
+
+Mean = 302.168 ms, StdErr = 0.727 ms (0.24%), N = 13, StdDev = 2.622 ms
+Min = 299.191 ms, Q1 = 300.629 ms, Median = 301.084 ms, Q3 = 302.726 ms, Max = 308.706 ms
+IQR = 2.097 ms, LowerFence = 297.483 ms, UpperFence = 305.872 ms
+ConfidenceInterval = [299.029 ms; 305.308 ms] (CI 99.9%), Margin = 3.140 ms (1.04% of Mean)
+Skewness = 1.16, Kurtosis = 3.37, MValue = 2
+
+// ** Remained 0 (0,0 %) benchmark(s) to run. Estimated finish 2025-09-10 20:18 (0h 0m from now) **
+Successfully reverted power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: Высокая производительность)
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts\results\MyChessEngine.EngineBenchmark-report.csv
+  BenchmarkDotNet.Artifacts\results\MyChessEngine.EngineBenchmark-report-github.md
+  BenchmarkDotNet.Artifacts\results\MyChessEngine.EngineBenchmark-report.html
+
+// * Detailed results *
+EngineBenchmark.FirstMoveBenchmark: DefaultJob
+Runtime = .NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2; GC = Concurrent Workstation
+Mean = 302.168 ms, StdErr = 0.727 ms (0.24%), N = 13, StdDev = 2.622 ms
+Min = 299.191 ms, Q1 = 300.629 ms, Median = 301.084 ms, Q3 = 302.726 ms, Max = 308.706 ms
+IQR = 2.097 ms, LowerFence = 297.483 ms, UpperFence = 305.872 ms
+ConfidenceInterval = [299.029 ms; 305.308 ms] (CI 99.9%), Margin = 3.140 ms (1.04% of Mean)
+Skewness = 1.16, Kurtosis = 3.37, MValue = 2
+-------------------- Histogram --------------------
+[298.333 ms ; 310.169 ms) | @@@@@@@@@@@@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.4946/24H2/2024Update/HudsonValley)
+12th Gen Intel Core i5-12450H 2.00GHz, 1 CPU, 12 logical and 8 physical cores
+.NET SDK 8.0.406
+  [Host]     : .NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2
+  DefaultJob : .NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2
+
+
+| Method             | Mean     | Error   | StdDev  | Gen0        | Gen1      | Allocated |
+|------------------- |---------:|--------:|--------:|------------:|----------:|----------:|
+| FirstMoveBenchmark | 302.2 ms | 3.14 ms | 2.62 ms | 116500.0000 | 1500.0000 | 698.63 MB |
+
+// * Hints *
+Outliers
+  EngineBenchmark.FirstMoveBenchmark: Default -> 2 outliers were removed (314.18 ms, 325.27 ms)
+
+// * Legends *
+  Mean      : Arithmetic mean of all measurements
+  Error     : Half of 99.9% confidence interval
+  StdDev    : Standard deviation of all measurements
+  Gen0      : GC Generation 0 collects per 1000 operations
+  Gen1      : GC Generation 1 collects per 1000 operations
+  Allocated : Allocated memory per single operation (managed only, inclusive, 1KB = 1024B)
+  1 ms      : 1 Millisecond (0.001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:11 (11.64 sec), executed benchmarks: 1
+
+Global total time: 00:00:18 (18.79 sec), executed benchmarks: 1
+// * Artifacts cleanup *
+Artifacts cleanup is finished

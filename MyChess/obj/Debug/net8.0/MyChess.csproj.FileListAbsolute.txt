@@ -1,0 +1,14 @@
+D:\RiderProjects\MyChessEngine\MyChess\bin\Debug\net8.0\MyChess.deps.json
+D:\RiderProjects\MyChessEngine\MyChess\bin\Debug\net8.0\MyChess.runtimeconfig.json
+D:\RiderProjects\MyChessEngine\MyChess\bin\Debug\net8.0\MyChess.dll
+D:\RiderProjects\MyChessEngine\MyChess\bin\Debug\net8.0\MyChess.pdb
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.GeneratedMSBuildEditorConfig.editorconfig
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.AssemblyInfoInputs.cache
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.AssemblyInfo.cs
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.csproj.CoreCompileInputs.cache
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.dll
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\refint\MyChess.dll
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.pdb
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.genruntimeconfig.cache
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\ref\MyChess.dll
+D:\RiderProjects\MyChessEngine\MyChess\obj\Debug\net8.0\MyChess.csproj.AssemblyReference.cache

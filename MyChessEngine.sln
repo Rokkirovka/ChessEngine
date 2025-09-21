@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyChess", "MyChess\MyChess.csproj", "{5626F1CF-6296-4396-85C7-8D092DC39865}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyChessVisual", "MyChessVisual\MyChessVisual.csproj", "{787C92E7-8F4C-4D90-895B-1CFFE9C35181}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyChessEngine", "MyChessEngine\MyChessEngine.csproj", "{701C09E2-EE7F-4A74-891D-DCE5B11DC18F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5626F1CF-6296-4396-85C7-8D092DC39865}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5626F1CF-6296-4396-85C7-8D092DC39865}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5626F1CF-6296-4396-85C7-8D092DC39865}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5626F1CF-6296-4396-85C7-8D092DC39865}.Release|Any CPU.Build.0 = Release|Any CPU
+		{787C92E7-8F4C-4D90-895B-1CFFE9C35181}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{787C92E7-8F4C-4D90-895B-1CFFE9C35181}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{787C92E7-8F4C-4D90-895B-1CFFE9C35181}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{787C92E7-8F4C-4D90-895B-1CFFE9C35181}.Release|Any CPU.Build.0 = Release|Any CPU
+		{701C09E2-EE7F-4A74-891D-DCE5B11DC18F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{701C09E2-EE7F-4A74-891D-DCE5B11DC18F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{701C09E2-EE7F-4A74-891D-DCE5B11DC18F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{701C09E2-EE7F-4A74-891D-DCE5B11DC18F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
