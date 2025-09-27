@@ -1,6 +1,6 @@
 namespace MyChess.Models;
 
-public enum ChessColor
+public enum ChessColor : byte
 {
     White,
     Black

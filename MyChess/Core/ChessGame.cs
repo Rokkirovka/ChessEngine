@@ -2,6 +2,7 @@ using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
 using MyChess.Rules;
+using MyChess.Rules.SpecialRules;
 using MyChess.Services.MoveExecution;
 
 namespace MyChess.Core;
@@ -19,40 +20,73 @@ public class ChessGame
         InitializeBoard();
     }
 
-    public bool TryMakeMove(ChessMove move)
+    public void MakeMove(ChessMove move)
     {
-        if (IsOver) return false;
-        var piece = GetPiece(move.From);
-        if (piece is null) return false;
-        if (!_moveExecutor.TryExecuteMove(move, _board, _state)) return false;
+        _moveExecutor.ExecuteMove(move, _board, _state);
         IsCheckmate = GameRules.IsCheckmate(_state.CurrentMoveColor, this);
-        return true;
     }
 
-    public void ForceMove(ChessMove move)
-    {
-        _moveExecutor.ForceMove(move, _board, _state);
-        IsCheckmate = GameRules.IsCheckmate(_state.CurrentMoveColor, this);
-        
-    }
-    
     public void UndoLastMove()
     {
         _moveExecutor.UndoMove(_board, _state);
         IsCheckmate = false;
     }
 
-    public IEnumerable<ChessMove> GetValidMoves(ChessCell cell)
+    public IEnumerable<ChessMove> GetValidMoves(int cell)
     {
         var piece = _board.GetPiece(cell);
-        if (piece is null || piece.Color != CurrentPlayer) return [];
-        var potentialMoves =  piece
+        if (piece is null || piece.Color != CurrentPlayer) yield break;
+
+        var friendlyPieces = CurrentPlayer == ChessColor.White ? 
+            _board.Occupancies[0] : _board.Occupancies[1];
+        var enemyPieces = CurrentPlayer == ChessColor.White ? 
+            _board.Occupancies[1] : _board.Occupancies[0];
+
+        var potentialMoves = piece
             .GetMoveGenerator()
-            .GetPossibleMoves(cell, _board, _state);
-        return potentialMoves.Where(move => GameRules.IsValidMove(move, _board, _state));
+            .GetPossibleMoves(cell, enemyPieces, friendlyPieces)
+            .Where(move => GameRules.IsValidMove(move, _board, _state));
+
+        foreach (var move in potentialMoves)
+        {
+            yield return move;
+        }
+
+        if (piece is King)
+        {
+            var moves = CastlingRule
+                .GetCastlingMoves(cell, _board, _state)
+                .Where(move => GameRules.IsValidMove(move, _board, _state));
+            
+            foreach (var move in moves)
+            {
+                yield return move;
+            }
+        }
+        
+        if (piece is Pawn)
+        {
+            var moves = EnPassantRule
+                .GetEnPassantMoves(cell, _board, _state)
+                .Where(move => GameRules.IsValidMove(move, _board, _state));
+            
+            foreach (var move in moves)
+            {
+                yield return move;
+            }
+            
+            moves = PromotionRule
+                .GetPromotionMoves(cell, _board, _state)
+                .Where(move => GameRules.IsValidMove(move, _board, _state));
+            
+            foreach (var move in moves)
+            {
+                yield return move;
+            } 
+        }
     }
 
-    public IEnumerable<ChessCell> GetCellsWillChange(ChessMove move)
+    public IEnumerable<int> GetCellsWillChange(ChessMove move)
     {
         var strategy = _strategyFactory.GetMoveStrategy(move);
         return strategy.GetCellsWillChange(move, _board, _state);
@@ -60,24 +94,21 @@ public class ChessGame
 
     public ChessColor CurrentPlayer => _state.CurrentMoveColor;
 
-    public IChessPiece? GetPiece(ChessCell cell) => _board.GetPiece(cell);
-    
+    public IChessPiece? GetPiece(int cell) => _board.GetPiece(cell);
+
     public bool IsCheckmate { get; private set; }
-    
+
     public bool IsStalemate { get; private set; }
-    
+
     public bool IsOver => IsCheckmate || IsStalemate;
 
     public IEnumerable<ChessMove> GetAllPossibleMoves()
     {
         for (var i = 0; i < 64; i++)
         {
-            var cell = (ChessCell)i;
-            var piece = GetPiece(cell);
-            if (piece?.Color == CurrentPlayer)
+            foreach (var move in GetValidMoves(i))
             {
-                foreach (var move in GetValidMoves(cell)) 
-                    yield return move;
+                yield return move;
             }
         }
     }
@@ -86,28 +117,23 @@ public class ChessGame
 
     private void InitializeBoard()
     {
-        _board.SetPiece(ChessCell.A8, Rook.Black);
-        _board.SetPiece(ChessCell.B8, Knight.Black);
-        _board.SetPiece(ChessCell.C8, Bishop.Black);
-        _board.SetPiece(ChessCell.D8, Queen.Black);
-        _board.SetPiece(ChessCell.E8, King.Black);
-        _board.SetPiece(ChessCell.F8, Bishop.Black);
-        _board.SetPiece(ChessCell.G8, Knight.Black);
-        _board.SetPiece(ChessCell.H8, Rook.Black);
-
-        _board.SetPiece(ChessCell.A1, Rook.White);
-        _board.SetPiece(ChessCell.B1, Knight.White);
-        _board.SetPiece(ChessCell.C1, Bishop.White);
-        _board.SetPiece(ChessCell.D1, Queen.White);
-        _board.SetPiece(ChessCell.E1, King.White);
-        _board.SetPiece(ChessCell.F1, Bishop.White);
-        _board.SetPiece(ChessCell.G1, Knight.White);
-        _board.SetPiece(ChessCell.H1, Rook.White);
-
-        for (var col = 0; col < 8; col++)
-        {
-            _board.SetPiece((ChessCell)((int)ChessCell.A7 + col), Pawn.Black);
-            _board.SetPiece((ChessCell)((int)ChessCell.A2 + col), Pawn.White);
-        }
+        _board.BitBoards =
+        [
+            new BitBoard(0x00FF000000000000),
+            new BitBoard(0x4200000000000000),
+            new BitBoard(0x2400000000000000),
+            new BitBoard(0x8100000000000000),
+            new BitBoard(0x0800000000000000),
+            new BitBoard(0x1000000000000000),
+            new BitBoard(0x000000000000FF00),
+            new BitBoard(0x0000000000000042),
+            new BitBoard(0x0000000000000024),
+            new BitBoard(0x0000000000000081),
+            new BitBoard(0x0000000000000008),
+            new BitBoard(0x0000000000000010)
+        ];
+        
+        _board.UpdateWhiteOccupancies();
+        _board.UpdateBlackOccupancies();
     }
 }

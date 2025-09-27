@@ -1,51 +1,63 @@
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
-using MyChess.Models.Pieces;
-using MyChess.Rules.SpecialRules;
 
 namespace MyChess.Rules.MoveGenerator;
 
 public class KingMoveGenerator : IMoveGenerator
 {
-    private readonly int[] _directions = [-9, -8, -7, -1, 1, 7, 8, 9];
-    
     public static readonly KingMoveGenerator Instance = new();
     
-    private KingMoveGenerator() { }
+    public static readonly BitBoard[] KingAttackMasks;
 
-    public IEnumerable<ChessMove> GetPossibleMoves(ChessCell cell, ChessBoard board, BoardState boardState)
+    private const ulong FileAExcludedMask = 18374403900871474942UL;
+
+    private const ulong FileHExcludedMask = 9187201950435737471UL;
+
+    static KingMoveGenerator()
     {
-        var piece = board.GetPiece(cell);
-        if (piece is not King) yield break;
-
-        foreach (var dir in _directions)
+        KingAttackMasks = new BitBoard[64];
+        InitializeKnightAttackMasks();
+    }
+    private KingMoveGenerator() { }
+    
+    private static void InitializeKnightAttackMasks()
+    {
+        for (var cell = 0; cell < 64; cell++)
         {
-            var targetPos = (int)cell + dir;
-            if (IsWithinBounds((int)cell, targetPos, dir, board, piece.Color))
-            {
-                var move = new StandardMove(cell, (ChessCell)targetPos);
-               yield return move;
-            }
+            KingAttackMasks[cell] = CalculateKingAttackMask(cell);
         }
-        
-        foreach (var move in CastlingRule.GetCastlingMoves(cell, board, boardState)) yield return move;
     }
 
-    private bool IsWithinBounds(int currentPos, int targetPos, int dir, ChessBoard board, ChessColor color)
+    private static BitBoard CalculateKingAttackMask(int cell)
     {
-        if (targetPos < 0 || targetPos >= 64) return false;
+        ulong attacks = 0;
+        BitBoard bitBoard = new();
+        bitBoard.SetBit(cell);
 
-        var currentFile = currentPos % 8;
-        var targetFile = targetPos % 8;
-        if (Math.Abs(dir) == 1 && Math.Abs(currentFile - targetFile) > 1)
-            return false;
-        if (Math.Abs(dir) == 9 && Math.Abs(currentFile - targetFile) > 1)
-            return false;
-        if (Math.Abs(dir) == 7 && Math.Abs(currentFile - targetFile) > 1)
-            return false;
+        attacks |= (bitBoard >> 8) | (bitBoard << 8); 
+    
+        attacks |= (bitBoard >> 9) & FileHExcludedMask;
+        attacks |= (bitBoard >> 7) & FileAExcludedMask; 
+        attacks |= (bitBoard >> 1) & FileHExcludedMask;
+    
+        attacks |= (bitBoard << 9) & FileAExcludedMask;
+        attacks |= (bitBoard << 7) & FileHExcludedMask;
+        attacks |= (bitBoard << 1) & FileAExcludedMask; 
 
-        var targetPiece = board.GetPiece((ChessCell)targetPos);
-        return targetPiece == null || targetPiece.Color != color;
+        return attacks;
+    }
+
+    public IEnumerable<ChessMove> GetPossibleMoves(int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
+    {
+        var attacks = KingAttackMasks[pieceCell];
+        var validTargets = (BitBoard)(attacks & ~friendlyPieces);
+        for (var i = 0; i < 8; i++)
+        {
+            var index = validTargets.GetLeastSignificantBitIndex();
+            if (index == -1) break;
+            validTargets.PopBit(index);
+            yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
+        }
     }
 }

@@ -6,5 +6,7 @@ public interface IChessPiece
 {
     ChessColor Color { get; }
     
+    int Index { get; }
+    
     IMoveGenerator GetMoveGenerator();
 }

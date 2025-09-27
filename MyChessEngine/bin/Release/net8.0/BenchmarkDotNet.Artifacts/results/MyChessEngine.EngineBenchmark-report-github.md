@@ -10,4 +10,4 @@ BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.6584/24H2/2024Update/HudsonValle
 ```
 | Method             | Mean     | Error   | StdDev  | Gen0       | Gen1     | Allocated |
 |------------------- |---------:|--------:|--------:|-----------:|---------:|----------:|
-| FirstMoveBenchmark | 149.2 ms | 0.95 ms | 0.79 ms | 62750.0000 | 250.0000 | 375.64 MB |
+| FirstMoveBenchmark | 134.3 ms | 0.85 ms | 0.71 ms | 66000.0000 | 250.0000 |    396 MB |

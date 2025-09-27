@@ -13,7 +13,7 @@ public class EnPassantMoveStrategy : IMoveStrategy
     public bool CanExecute(ChessMove move, ChessBoard board, BoardState boardState)
     {
         return EnPassantRule
-            .GetEnPassantMoves(move.From, board , boardState)
+            .GetEnPassantMoves(move.From, board, boardState)
             .Contains(move);
     }
 
@@ -38,7 +38,7 @@ public class EnPassantMoveStrategy : IMoveStrategy
         return new EnPassantMoveHistoryItem(move, stateBeforeMove);
     }
 
-    public IEnumerable<ChessCell> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
+    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
     {
         yield return move.From;
         yield return move.To;

@@ -23,7 +23,7 @@ public class Engine(ChessGame game)
             var previousScore = _score;
             var movesWillChange = game.GetCellsWillChange(move).ToArray();
             RemoveCellsScore(movesWillChange);
-            game.ForceMove(move);
+            game.MakeMove(move);
             UpdateScore(movesWillChange);
             var result = EvaluatePosition(depth - 1);
             game.UndoLastMove();
@@ -39,7 +39,7 @@ public class Engine(ChessGame game)
         return new EngineResult(bestScore, bestMove);
     }
     
-    public void RemoveCellsScore(IEnumerable<ChessCell> changes)
+    public void RemoveCellsScore(IEnumerable<int> changes)
     {
         foreach (var cell in changes)
         {
@@ -48,12 +48,12 @@ public class Engine(ChessGame game)
             var color = piece.Color;
             
             var factor = -1;
-            var tableIndex = (int)cell;
+            var tableIndex = cell;
             
             if (color == ChessColor.Black)
             {
                 factor = 1;
-                tableIndex = PieceSquareTables.MirrorSquare((int)cell);
+                tableIndex = PieceSquareTables.MirrorSquare(cell);
             }
             
             _score += PieceSquareTables.GetPieceTable(piece)[tableIndex] * factor;
@@ -61,7 +61,7 @@ public class Engine(ChessGame game)
         }
     }
 
-    public void UpdateScore(IEnumerable<ChessCell> changes)
+    public void UpdateScore(IEnumerable<int> changes)
     {
         foreach (var cell in changes)
         {
@@ -70,12 +70,12 @@ public class Engine(ChessGame game)
             var color = piece.Color;
             
             var factor = 1;
-            var tableIndex = (int)cell;
+            var tableIndex = cell;
             
             if (color == ChessColor.Black)
             {
                 factor = -1;
-                tableIndex = PieceSquareTables.MirrorSquare((int)cell);
+                tableIndex = PieceSquareTables.MirrorSquare(cell);
             }
             
             _score += PieceSquareTables.GetPieceTable(piece)[tableIndex] * factor;
@@ -94,7 +94,7 @@ public class Engine(ChessGame game)
 
         for (var cell = 0; cell < 64; cell++)
         {
-            var piece = game.GetPiece((ChessCell)cell);
+            var piece = game.GetPiece(cell);
             if (piece == null) continue;
             var factor = 1;
             var tableIndex = cell;

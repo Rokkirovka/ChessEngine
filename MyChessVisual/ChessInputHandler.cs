@@ -10,10 +10,10 @@ public class ChessInputHandler
     private ChessGame _chessGame;
     private Engine _engine;
     private ChessBoardRenderer _chessBoardRenderer;
-    private ChessCell? _selectedCell;
-    private ChessCell? _lastMoveFrom;
-    private ChessCell? _lastMoveTo;
-    private ChessMove[] _possibleMoves = [];
+    private int? _selectedCell;
+    private int? _lastMoveFrom;
+    private int? _lastMoveTo;
+    private List<ChessMove> _possibleMoves = new();
 
     public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer)
     {
@@ -24,10 +24,9 @@ public class ChessInputHandler
 
     public void HandleSquareClick(object? sender, EventArgs e)
     {
-        if (_chessGame.CurrentPlayer is ChessColor.Black
-            || _chessGame.IsOver) return;
+        // if (_chessGame.CurrentPlayer is ChessColor.Black || _chessGame.IsOver) return;
 
-        if (sender is not PictureBox { Tag: ChessCell clickedCell } pictureBox) return;
+        if (sender is not PictureBox { Tag: int clickedCell } pictureBox) return;
 
         if (_selectedCell == clickedCell)
         {
@@ -56,24 +55,24 @@ public class ChessInputHandler
             return;
         }
 
-        _ = TryMakeMove((ChessCell)pictureBox.Tag);
+        _ = MakeMove((int)pictureBox.Tag);
     }
 
-    private void SelectPiece(ChessCell cell, PictureBox pictureBox)
+    private void SelectPiece(int cell, PictureBox pictureBox)
     {
         _selectedCell = cell;
         pictureBox.BackColor = Color.LightBlue;
-        _possibleMoves = _chessGame.GetValidMoves(cell).ToArray();
+        _possibleMoves = _chessGame.GetValidMoves(cell).ToList();
         HighlightPossibleMoves();
     }
 
-    private void ChangeSelection(ChessCell newCell, PictureBox pictureBox)
+    private void ChangeSelection(int newCell, PictureBox pictureBox)
     {
         ClearSelection();
         SelectPiece(newCell, pictureBox);
     }
 
-    private async Task TryMakeMove(ChessCell targetCell)
+    private async Task MakeMove(int targetCell)
     {
         var move = _possibleMoves.FirstOrDefault(move => move.From == _selectedCell && move.To == targetCell);
         if (move is not null)
@@ -83,7 +82,7 @@ public class ChessInputHandler
                 var promotionForm = new PromotionForm(_chessGame.CurrentPlayer);
                 if (promotionForm.ShowDialog() == DialogResult.OK)
                 {
-                    move = new PromotionMove(move.From, move.To, promotionForm.SelectedPieceType);
+                    move = new PromotionMove((ChessCell)move.From, (ChessCell)move.To, promotionForm.SelectedPieceType);
                 }
                 else
                 {
@@ -94,7 +93,7 @@ public class ChessInputHandler
 
             var movesWillChange = _chessGame.GetCellsWillChange(move).ToArray();
             _engine.RemoveCellsScore(movesWillChange);
-            _chessGame.ForceMove(move);
+            _chessGame.MakeMove(move);
             _engine.UpdateScore(movesWillChange);
             _lastMoveFrom = _selectedCell!.Value;
             _lastMoveTo = targetCell;
@@ -104,7 +103,7 @@ public class ChessInputHandler
             {
                 var engineResult = _engine.EvaluatePosition();
                 if (engineResult.BestMove is null) throw new Exception();
-                _chessGame.ForceMove(engineResult.BestMove);
+                _chessGame.MakeMove(engineResult.BestMove);
                 _lastMoveFrom = engineResult.BestMove.From;
                 _lastMoveTo = engineResult.BestMove.To;
             });
@@ -119,8 +118,8 @@ public class ChessInputHandler
     {
         foreach (var move in _possibleMoves)
         {
-            var row = (int)move.To / 8;
-            var col = (int)move.To % 8;
+            var row = move.To / 8;
+            var col = move.To % 8;
             _chessBoardRenderer.HighlightSquare(row, col, Color.LightGreen);
         }
     }
@@ -135,15 +134,15 @@ public class ChessInputHandler
     {
         if (_lastMoveFrom.HasValue)
         {
-            var fromRow = (int)_lastMoveFrom.Value / 8;
-            var fromCol = (int)_lastMoveFrom.Value % 8;
+            var fromRow = _lastMoveFrom.Value / 8;
+            var fromCol = _lastMoveFrom.Value % 8;
             _chessBoardRenderer.HighlightSquare(fromRow, fromCol, Color.LightYellow);
         }
 
         if (_lastMoveTo.HasValue)
         {
-            var toRow = (int)_lastMoveTo.Value / 8;
-            var toCol = (int)_lastMoveTo.Value % 8;
+            var toRow = _lastMoveTo.Value / 8;
+            var toCol = _lastMoveTo.Value % 8;
             _chessBoardRenderer.HighlightSquare(toRow, toCol, Color.LightYellow);
         }
     }

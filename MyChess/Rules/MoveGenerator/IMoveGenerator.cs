@@ -6,5 +6,8 @@ namespace MyChess.Rules.MoveGenerator;
 
 public interface IMoveGenerator
 {
-    IEnumerable<ChessMove> GetPossibleMoves(ChessCell cell, ChessBoard board, BoardState boardState);
+    IEnumerable<ChessMove> GetPossibleMoves(
+        int pieceCell, 
+        BitBoard enemyPieces,
+        BitBoard friendlyPieces);
 }

@@ -4,35 +4,33 @@ namespace MyChess.Core;
 
 public class BoardState
 {
-    public ChessColor CurrentMoveColor { get; set; }
-    public ChessCell? EnPassantTarget { get; set; }
-    public bool WhiteKingSideCastling { get; set; } = true;
-    public bool WhiteQueenSideCastling { get; set; } = true;
-    public bool BlackKingSideCastling { get; set; } = true;
-    public bool BlackQueenSideCastling { get; set; } = true;
+    public ChessColor CurrentMoveColor { get; private set; }
+    public int? EnPassantTarget { get; set; }
+
+    public CastlingRights CastlingRights { get; private set; } =
+        CastlingRights.WhiteKingSide |
+        CastlingRights.WhiteQueenSide |
+        CastlingRights.BlackKingSide |
+        CastlingRights.BlackQueenSide;
+    
+    public void DisableCastling(CastlingRights right) => CastlingRights &= ~right;
 
     public void ChangeColor()
     {
         CurrentMoveColor = 1 - CurrentMoveColor;
     }
-    
-    public BoardState Clone() => new BoardState
+
+    public BoardState Clone() => new()
     {
         CurrentMoveColor = CurrentMoveColor,
         EnPassantTarget = EnPassantTarget,
-        WhiteKingSideCastling = WhiteKingSideCastling,
-        WhiteQueenSideCastling = WhiteQueenSideCastling,
-        BlackKingSideCastling = BlackKingSideCastling,
-        BlackQueenSideCastling = BlackQueenSideCastling
+        CastlingRights = CastlingRights
     };
 
     public void RestoreFrom(BoardState stateBeforeMove)
     {
         CurrentMoveColor = stateBeforeMove.CurrentMoveColor;
         EnPassantTarget = stateBeforeMove.EnPassantTarget;
-        WhiteKingSideCastling = stateBeforeMove.WhiteKingSideCastling;
-        WhiteQueenSideCastling = stateBeforeMove.WhiteQueenSideCastling;
-        BlackKingSideCastling = stateBeforeMove.BlackKingSideCastling;
-        BlackQueenSideCastling = stateBeforeMove.BlackQueenSideCastling;
+        CastlingRights = stateBeforeMove.CastlingRights;
     }
 }

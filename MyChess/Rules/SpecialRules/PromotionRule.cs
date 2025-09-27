@@ -2,58 +2,53 @@ using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
+using MyChess.Rules.MoveGenerator;
 
 namespace MyChess.Rules.SpecialRules;
 
 public static class PromotionRule
 {
-    public static IEnumerable<ChessMove> GetPromotionMoves(ChessCell pawnPos, ChessBoard board, BoardState boardState)
+    private const ulong SecondRankMask = 71776119061217280UL;
+    private const ulong SeventhRankMask = 65280UL;
+    public static IEnumerable<ChessMove> GetPromotionMoves(int pawnPos, ChessBoard board, BoardState boardState)
     {
-        var pawn = board.GetPiece(pawnPos);
-        if (pawn is not Pawn) yield break;
+        var piece = board.GetPiece(pawnPos);
+        if (piece is null) yield break;
+        var color = piece.Color;
 
-        var pawnRank = (int)pawnPos / 8;
-        var isValidRank = (pawn.Color == ChessColor.White && pawnRank == 1) || 
-                          (pawn.Color == ChessColor.Black && pawnRank == 6);
-        if (!isValidRank) yield break;
-        
-        var direction = pawn.Color == ChessColor.White ? -8 : 8;
-        var targetCell = pawnPos + direction;
-        
-        var promotionPieces = new List<IChessPiece>
+        if (color == ChessColor.White)
         {
-            pawn.Color == ChessColor.White ? Bishop.White : Bishop.Black,
-            pawn.Color == ChessColor.White ? Queen.White : Queen.Black,
-            pawn.Color == ChessColor.White ? Knight.White : Knight.Black,
-            pawn.Color == ChessColor.White ? Rook.White : Rook.Black
-        };
-
-        var leftCapturePos = (int)targetCell - 1;
-        var leftCapturePiece = board.GetPiece((ChessCell)leftCapturePos);
-        if (leftCapturePos is >= 0 and < 64 && (int)pawnPos % 8 - leftCapturePos % 8 == 1
-            && leftCapturePiece is not null && leftCapturePiece.Color == 1 - pawn.Color)
-            foreach (var piece in promotionPieces)
+            if ((SeventhRankMask & (1UL << pawnPos)) == 0) yield break;
+            var attacks = WhitePawnMoveGenerator.WhitePawnAttackMasks[pawnPos];
+            var moves = WhitePawnMoveGenerator.WhitePawnMoveMasks[pawnPos];
+            var validTargets = (BitBoard)((attacks & board.Occupancies[1]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1])));
+            for (var i = 0; i < 3; i++)
             {
-                var move = new PromotionMove(pawnPos, (ChessCell)leftCapturePos, piece);
-                yield return move;
+                var index = validTargets.GetLeastSignificantBitIndex();
+                if (index == -1) break;
+                validTargets.PopBit(index);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Queen.White);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Rook.White);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Bishop.White);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Knight.White);
             }
-
-        var rightCapturePos = (int)targetCell + 1;
-        var rightCapturePiece = board.GetPiece((ChessCell)rightCapturePos);
-        if (rightCapturePos is >= 0 and < 64 && rightCapturePos % 8 - (int)pawnPos % 8 == 1
-            && rightCapturePiece is not null && rightCapturePiece.Color == 1 - pawn.Color)
-            foreach (var piece in promotionPieces)
-            {
-                var move = new PromotionMove(pawnPos, (ChessCell)rightCapturePos, piece);
-                yield return move;
-            }
-        
-        if ((int)targetCell < 0 || (int)targetCell >= 64 || board.GetPiece(targetCell) is not null) yield break;
- 
-        foreach (var piece in promotionPieces)
+        }
+        else
         {
-            var move = new PromotionMove(pawnPos, pawnPos + direction, piece);
-            yield return move;
+            if ((SecondRankMask & (1UL << pawnPos)) == 0) yield break;
+            var attacks = BlackPawnMoveGenerator.BlackPawnAttackMasks[pawnPos];
+            var moves = BlackPawnMoveGenerator.BlackPawnMoveMasks[pawnPos];
+            var validTargets = (BitBoard)((attacks & board.Occupancies[0]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1])));
+            for (var i = 0; i < 3; i++)
+            {
+                var index = validTargets.GetLeastSignificantBitIndex();
+                if (index == -1) break;
+                validTargets.PopBit(index);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Queen.Black);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Rook.Black);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Bishop.Black);
+                yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Knight.Black);
+            }
         }
     }
 }

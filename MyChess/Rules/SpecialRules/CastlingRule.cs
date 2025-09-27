@@ -7,57 +7,96 @@ namespace MyChess.Rules.SpecialRules;
 
 public static class CastlingRule
 {
-    public static IEnumerable<ChessMove> GetCastlingMoves(ChessCell kingPos, ChessBoard board, BoardState boardState)
+    public static IEnumerable<ChessMove> GetCastlingMoves(int kingPos, ChessBoard board, BoardState boardState)
     {
-        var king = board.GetPiece(kingPos);
-        if (king is not King) yield break;
-
-        if (GameRules.IsKingInCheck(king.Color, board)) yield break;
-
-        var canKingSide = king.Color == ChessColor.White ? 
-            boardState.WhiteKingSideCastling : boardState.BlackKingSideCastling;
-        var canQueenSide = king.Color == ChessColor.White ? 
-            boardState.WhiteQueenSideCastling : boardState.BlackQueenSideCastling;
-
-        if (canKingSide && CheckKingSide(kingPos, board, king.Color))
+        var color = kingPos == board.FindKing(ChessColor.White) ? ChessColor.White : ChessColor.Black;
+        
+        if (color == ChessColor.White)
         {
-            var move = new CastlingMove(kingPos, (ChessCell)((int)kingPos + 2));
-            yield return move;
+            if (boardState.CastlingRights.HasFlag(CastlingRights.WhiteKingSide) && 
+                CanCastle(true, color, board))
+            {
+                yield return new CastlingMove((ChessCell)kingPos, (ChessCell)kingPos + 2);
+            }
+            
+            if (boardState.CastlingRights.HasFlag(CastlingRights.WhiteQueenSide) && 
+                CanCastle(false, color, board))
+            {
+                yield return new CastlingMove((ChessCell)kingPos, (ChessCell)kingPos - 2);
+            }
         }
-
-        if (canQueenSide && CheckQueenSide(kingPos, board, king.Color))
+        else
         {
-            var move = new CastlingMove(kingPos, (ChessCell)((int)kingPos - 2));
-            yield return move;
+            if (boardState.CastlingRights.HasFlag(CastlingRights.BlackKingSide) && 
+                CanCastle(true, color, board))
+            {
+                yield return new CastlingMove((ChessCell)kingPos, (ChessCell)kingPos + 2); 
+            }
+            
+            if (boardState.CastlingRights.HasFlag(CastlingRights.BlackQueenSide) && 
+                CanCastle(false, color, board))
+            {
+                yield return new CastlingMove((ChessCell)kingPos, (ChessCell)kingPos - 2);
+            }
         }
     }
-
-    private static bool CheckKingSide(ChessCell kingPos, ChessBoard board, ChessColor color)
+    
+    private static bool CanCastle(bool kingSide, ChessColor color, ChessBoard board)
     {
-        var rookPos = (int)kingPos + 3;
-        var kingTo = (int)kingPos + 2;
-        var intermediate = (int)kingPos + 1;
+        int rookPos, checkSquare1, checkSquare2, checkSquare3, checkSquare4 = -1;
+        var allPieces = (BitBoard)(board.Occupancies[0] | board.Occupancies[1]);
+        
+        if (color == ChessColor.White)
+        {
+            if (kingSide)
+            {
+                rookPos = 63;
+                checkSquare1 = 60;
+                checkSquare2 = 61; 
+                checkSquare3 = 62;
+            }
+            else 
+            {
+                rookPos = 56;
+                checkSquare1 = 60;
+                checkSquare2 = 59; 
+                checkSquare3 = 58;
+                checkSquare4 = 57;
+            }
+        }
+        else 
+        {
+            if (kingSide) 
+            {
+                rookPos = 7;
+                checkSquare1 = 4; 
+                checkSquare2 = 5; 
+                checkSquare3 = 6; 
+            }
+            else
+            {
+                rookPos = 0; 
+                checkSquare1 = 4; 
+                checkSquare2 = 3; 
+                checkSquare3 = 2; 
+                checkSquare4 = 1; 
+            }
+        }
+        
+        var rookPiece = color == ChessColor.White ? Rook.White : Rook.Black;
+        if (!board.BitBoards[rookPiece.Index].GetBit(rookPos)) return false;
+            
+        if (kingSide)
+        {
+            if (allPieces.GetBit(checkSquare2) || allPieces.GetBit(checkSquare3)) return false;
+        }
+        else
+        {
+            if (allPieces.GetBit(checkSquare2) || allPieces.GetBit(checkSquare3) || allPieces.GetBit(checkSquare4))
+                return false;
+        }
 
-        return board.GetPiece((ChessCell)rookPos) is Rook rook && 
-               rook.Color == color &&
-               board.GetPiece((ChessCell)intermediate) == null &&
-               board.GetPiece((ChessCell)kingTo) == null &&
-               !GameRules.IsSquareUnderAttack((ChessCell)intermediate, color, board) &&
-               !GameRules.IsSquareUnderAttack((ChessCell)kingTo, color, board);
-    }
-
-    private static bool CheckQueenSide(ChessCell kingPos, ChessBoard board, ChessColor color)
-    {
-        var rookPos = (int)kingPos - 4;
-        var kingTo = (int)kingPos - 2;
-        var intermediate = (int)kingPos - 1;
-
-        return board.GetPiece((ChessCell)rookPos) is Rook rook && 
-               rook.Color == color &&
-               board.GetPiece((ChessCell)((int)kingPos - 1)) == null &&
-               board.GetPiece((ChessCell)((int)kingPos - 2)) == null &&
-               board.GetPiece((ChessCell)((int)kingPos - 3)) == null &&
-               !GameRules.IsSquareUnderAttack((ChessCell)intermediate, color, board) &&
-               !GameRules.IsSquareUnderAttack((ChessCell)kingTo, color, board);
+        return !GameRules.IsSquareUnderAttack(checkSquare1, color, board)
+               && !GameRules.IsSquareUnderAttack(checkSquare3, color, board);
     }
 }

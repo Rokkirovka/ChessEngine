@@ -6,8 +6,8 @@ namespace MyChessVisual
     {
         private readonly ChessGame _game;
         private readonly Control _parentControl;
-        private readonly Font _infoFont = new Font("Arial", 12, FontStyle.Bold);
-        private readonly Font _statusFont = new Font("Arial", 14, FontStyle.Regular);
+        private readonly Font _infoFont = new("Arial", 12, FontStyle.Bold);
+        private readonly Font _statusFont = new("Arial", 14, FontStyle.Regular);
         
         private Label _playerLabel;
         private Label _evaluationLabel;

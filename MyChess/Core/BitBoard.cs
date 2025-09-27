@@ -1,40 +1,72 @@
 using MyChess.Models;
-using MyChess.Models.Pieces;
 
 namespace MyChess.Core;
 
-public class ChessBoard
+public class BitBoard(ulong value = 0UL)
 {
-    private IChessPiece?[] _pieces = new IChessPiece?[64];
+    private ulong _value = value;
 
-    public IChessPiece? GetPiece(ChessCell cell) => _pieces[(int)cell];
-
-    public void SetPiece(ChessCell cell, IChessPiece? piece) => _pieces[(int)cell] = piece;
-
-    public void RemovePiece(ChessCell cell) => _pieces[(int)cell] = null;
-
-    public void MovePiece(ChessCell from, ChessCell to)
+    public bool GetBit(int cell)
     {
-        if (GetPiece(from) is null) return;
-        SetPiece(to, GetPiece(from));
-        RemovePiece(from);
+        return (_value & (1UL << cell)) != 0;
     }
 
-    public ChessCell FindKing(ChessColor color)
+    public void SetBit(int cell)
     {
-        for (var i = 0; i < 64; i++)
+        _value |= 1UL << cell;
+    }
+
+    public bool PopBit(int cell)
+    {
+        var mask = 1UL << cell;
+        var wasSet = (_value & mask) != 0;
+        _value &= ~mask;
+        return wasSet;
+    }
+
+    public int CountBits()
+    {
+        var count = 0;
+        var bitBoard = _value;
+        while (bitBoard != 0)
         {
-            if (_pieces[i] is King king && king.Color == color) return (ChessCell)i;
+            bitBoard &= bitBoard - 1;
+            count++;
         }
-        throw new InvalidOperationException("King not found");
+        return count;
     }
     
-    public ChessBoard Clone()
+    public int GetLeastSignificantBitIndex()
     {
-        var clonedBoard = new ChessBoard
+        var count = 0;
+        if (_value== 0) return -1;
+        var ls1B = (_value & (ulong)-(long)_value) - 1;
+        while (ls1B != 0)
         {
-            _pieces = _pieces.Select(p => p).ToArray()
-        };
-        return clonedBoard;
+            ls1B &= ls1B - 1;
+            count++;
+        }
+        return count;
+    }
+    
+    public static BitBoard operator <<(BitBoard bb, int shift) => bb._value << shift;
+    public static BitBoard operator >>(BitBoard bb, int shift) => bb._value >> shift;
+    public static implicit operator ulong(BitBoard bb) => bb._value;
+    public static implicit operator BitBoard(ulong value) => new() { _value = value };
+    
+    public override string ToString()
+    {
+        var result = "\n";
+        
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                var square = rank * 8 + file;
+                result += $" {(GetBit(square) ? 1 : 0)}";
+            }
+            result += "\n";
+        }
+        return result;
     }
 }

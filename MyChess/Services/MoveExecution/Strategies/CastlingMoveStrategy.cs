@@ -37,7 +37,7 @@ public class CastlingMoveStrategy : IMoveStrategy
         return new CastlingMoveHistoryItem(move, stateBeforeMove);
     }
 
-    public IEnumerable<ChessCell> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
+    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
     {
         var castlingMove = (CastlingMove)move;
         yield return move.From;
@@ -51,13 +51,13 @@ public class CastlingMoveStrategy : IMoveStrategy
         var color = board.GetPiece(castlingMove.To)!.Color;
         if (color == ChessColor.White)
         {
-            boardState.WhiteQueenSideCastling = false;
-            boardState.WhiteKingSideCastling = false;
+            boardState.DisableCastling(CastlingRights.WhiteQueenSide);
+            boardState.DisableCastling(CastlingRights.WhiteKingSide);
         }
         else
         {
-            boardState.BlackQueenSideCastling = true;
-            boardState.BlackKingSideCastling = false;
+            boardState.DisableCastling(CastlingRights.BlackQueenSide);
+            boardState.DisableCastling(CastlingRights.BlackKingSide);
         }
     }
 }

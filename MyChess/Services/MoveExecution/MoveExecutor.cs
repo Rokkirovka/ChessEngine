@@ -9,16 +9,7 @@ public class MoveExecutor(IMoveStrategyFactory strategyFactory) : IMoveExecutor
 {
     private readonly Stack<MoveHistoryItem> _moveHistory = new();
 
-
-    public bool TryExecuteMove(ChessMove move, ChessBoard board, BoardState boardState)
-    {
-        var strategy = strategyFactory.GetMoveStrategy(move);
-        if (!strategy.CanExecute(move, board, boardState)) return false;
-        ForceMove(move, board, boardState);
-        return true;
-    }
-
-    public void ForceMove(ChessMove move, ChessBoard board, BoardState boardState)
+    public void ExecuteMove(ChessMove move, ChessBoard board, BoardState boardState)
     {
         var strategy = strategyFactory.GetMoveStrategy(move);
         var stateBeforeMove = boardState.Clone();
@@ -26,6 +17,7 @@ public class MoveExecutor(IMoveStrategyFactory strategyFactory) : IMoveExecutor
         strategy.Execute(move, board, boardState);
         _moveHistory.Push(historyItem);
         boardState.ChangeColor();
+        boardState.EnPassantTarget = null;
     }
 
     public void UndoMove(ChessBoard board, BoardState boardState)

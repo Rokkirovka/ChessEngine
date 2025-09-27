@@ -32,7 +32,7 @@ public class ChessBoardRenderer
                     Location = new Point(col * SquareSize + BoardPadding, row * SquareSize + BoardPadding),
                     BackColor = GetSquareColor(row, col),
                     SizeMode = PictureBoxSizeMode.StretchImage,
-                    Tag = (ChessCell)(row * BoardSize + col)
+                    Tag = row * BoardSize + col
                 };
                 parentControl.Controls.Add(_chessBoard[row, col]);
             }
@@ -69,7 +69,7 @@ public class ChessBoardRenderer
     
     private Bitmap GetPieceImage(int row, int col)
     {
-        var piece = _game.GetPiece((ChessCell)(row * BoardSize + col));
+        var piece = _game.GetPiece(row * BoardSize + col);
         return piece == null 
             ? new Bitmap(SquareSize, SquareSize) 
             : ChessPieceImages.GetImage(piece);

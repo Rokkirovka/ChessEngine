@@ -11,6 +11,13 @@ class Program
     public static void Main(string[] args)
     {
         BenchmarkRunner.Run<EngineBenchmark>();
+        // var bb = new BitBoard();
+        // for (int i = 0; i <= 55; i++)
+        // {
+        //     bb.SetBit(i);
+        // }
+        // Console.WriteLine(bb.ToString());
+        // Console.WriteLine((ulong)bb);
     }
 }
 

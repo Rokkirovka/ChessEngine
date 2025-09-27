@@ -3,24 +3,18 @@ using MyChess.Models;
 using MyChess.Models.MoveHistoryItems;
 using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
+using MyChess.Rules;
 using MyChess.Services.MoveExecution.Interfaces;
+using static MyChess.Models.ChessCell;
 
 namespace MyChess.Services.MoveExecution.Strategies;
 
 public class StandardMoveStrategy : IMoveStrategy
 {
-    public bool CanExecute(ChessMove move, ChessBoard board, BoardState boardState)
+    public void Execute(ChessMove move, ChessBoard board, BoardState boardState)
     {
-        var piece = board.GetPiece(move.From);
-        return piece?.GetMoveGenerator()
-            .GetPossibleMoves(move.From, board, boardState)
-            .Contains(move) ?? false;
-    }
-
-    public void Execute(ChessMove castlingMove, ChessBoard board, BoardState boardState)
-    {
-        board.MovePiece(castlingMove.From, castlingMove.To);
-        UpdateBoardState(castlingMove, board, boardState);
+        board.MovePiece(move.From, move.To);
+        UpdateBoardState(move, board, boardState);
     }
 
     public void Undo(MoveHistoryItem historyItem, ChessBoard board, BoardState boardState)
@@ -34,10 +28,11 @@ public class StandardMoveStrategy : IMoveStrategy
 
     public MoveHistoryItem CreateHistoryItem(ChessMove move, BoardState stateBeforeMove, ChessBoard board)
     {
+        if (board.GetPiece(move.To) is King) throw new ArgumentException("King cannot be captured.");
         return new StandardMoveHistoryItem(move, stateBeforeMove, board.GetPiece(move.To));
     }
 
-    public IEnumerable<ChessCell> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
+    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
     {
         yield return move.From;
         yield return move.To;
@@ -54,20 +49,30 @@ public class StandardMoveStrategy : IMoveStrategy
             case King king:
                 if (king.Color == ChessColor.White)
                 {
-                    boardState.WhiteKingSideCastling = false;
-                    boardState.WhiteQueenSideCastling = false;
+                    boardState.DisableCastling(CastlingRights.WhiteQueenSide);
+                    boardState.DisableCastling(CastlingRights.WhiteKingSide);
                 }
                 else
                 {
-                    boardState.BlackKingSideCastling = false;
-                    boardState.BlackQueenSideCastling = false;
+                    boardState.DisableCastling(CastlingRights.BlackQueenSide);
+                    boardState.DisableCastling(CastlingRights.BlackKingSide);
                 }
                 break;
-            case Rook:
-                boardState.BlackQueenSideCastling &= move.From != ChessCell.A8;
-                boardState.BlackKingSideCastling &= move.From != ChessCell.H8;
-                boardState.WhiteQueenSideCastling &= move.From != ChessCell.A1;
-                boardState.WhiteKingSideCastling &= move.From != ChessCell.H1;
+            case Rook rook:
+                if (rook.Color == ChessColor.White)
+                {
+                    if (move.From == (int)A1)
+                        boardState.DisableCastling(CastlingRights.WhiteQueenSide);
+                    if (move.From == (int)H1)
+                        boardState.DisableCastling(CastlingRights.WhiteKingSide);
+                }
+                else
+                {
+                    if (move.From == (int)A8)
+                        boardState.DisableCastling(CastlingRights.BlackQueenSide);
+                    if (move.From == (int)H8)
+                        boardState.DisableCastling(CastlingRights.BlackKingSide);
+                }
                 break;
         }
     }
