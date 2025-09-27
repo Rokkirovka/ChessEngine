@@ -2,6 +2,6 @@ namespace MyChess.Models.Moves;
 
 public class CastlingMove(ChessCell from, ChessCell to) : ChessMove(from, to)
 {
-    public readonly ChessCell RookFrom = to > from ? from + 3 : from - 4;
-    public readonly ChessCell RookTo = to > from ? from + 1 : from - 1;
+    public readonly int RookFrom = to > from ? (int)from + 3 : (int)from - 4;
+    public readonly int RookTo = to > from ? (int)from + 1 : (int)from - 1;
 }
