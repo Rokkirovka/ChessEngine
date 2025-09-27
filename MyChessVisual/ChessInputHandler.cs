@@ -7,24 +7,32 @@ namespace MyChessVisual;
 
 public class ChessInputHandler
 {
-    private ChessGame _chessGame;
-    private Engine _engine;
-    private ChessBoardRenderer _chessBoardRenderer;
+    private readonly ChessGame _chessGame;
+    private readonly Engine _engine;
+    private readonly ChessBoardRenderer _chessBoardRenderer;
     private int? _selectedCell;
     private int? _lastMoveFrom;
     private int? _lastMoveTo;
-    private List<ChessMove> _possibleMoves = new();
+    private List<ChessMove> _possibleMoves = [];
+    private readonly bool _autoPlayMode;
+    private readonly int _autoPlayDelay = 100;
 
-    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer)
+    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = false)
     {
         _chessGame = game;
         _engine = new Engine(game);
         _chessBoardRenderer = renderer;
+        _autoPlayMode = autoPlayMode;
+        
+        if (_autoPlayMode)
+        {
+            StartAutoPlay();
+        }
     }
 
     public void HandleSquareClick(object? sender, EventArgs e)
     {
-        // if (_chessGame.CurrentPlayer is ChessColor.Black || _chessGame.IsOver) return;
+        if (_autoPlayMode) return;
 
         if (sender is not PictureBox { Tag: int clickedCell } pictureBox) return;
 
@@ -35,17 +43,12 @@ public class ChessInputHandler
         }
 
         var piece = _chessGame.GetPiece(clickedCell);
-
         if (_selectedCell is null && piece is null) return;
+        if (_selectedCell is null && piece != null && piece.Color != _chessGame.CurrentPlayer) return;
 
         if (_selectedCell is null && piece != null && piece.Color == _chessGame.CurrentPlayer)
         {
             SelectPiece(clickedCell, pictureBox);
-            return;
-        }
-
-        if (_selectedCell is null && piece != null && piece.Color != _chessGame.CurrentPlayer)
-        {
             return;
         }
 
@@ -56,6 +59,35 @@ public class ChessInputHandler
         }
 
         _ = MakeMove((int)pictureBox.Tag);
+    }
+    
+    private async void StartAutoPlay()
+    {
+        while (!_chessGame.IsOver && _autoPlayMode)
+        {
+            await MakeEngineMove();
+            await Task.Delay(_autoPlayDelay);
+
+            if (_chessGame.IsOver) continue;
+            await MakeEngineMove();
+            await Task.Delay(_autoPlayDelay);
+        }
+    }
+    
+    private async Task MakeEngineMove()
+    {
+        await Task.Run(() =>
+        {
+            var engineResult = _engine.EvaluatePosition();
+            if (engineResult.BestMove is null) return;
+            var movesWillChange = _chessGame.GetCellsWillChange(engineResult.BestMove).ToArray();
+            _engine.RemoveCellsScore(movesWillChange);
+            _chessGame.MakeMove(engineResult.BestMove);
+            _engine.UpdateScore(movesWillChange);
+            _lastMoveFrom = engineResult.BestMove.From;
+            _lastMoveTo = engineResult.BestMove.To;
+            UpdateBoardAfterMove();
+        });
     }
 
     private void SelectPiece(int cell, PictureBox pictureBox)

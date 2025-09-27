@@ -97,6 +97,7 @@ public static class CastlingRule
         }
 
         return !GameRules.IsSquareUnderAttack(checkSquare1, color, board)
+               && !GameRules.IsSquareUnderAttack(checkSquare2, color, board)
                && !GameRules.IsSquareUnderAttack(checkSquare3, color, board);
     }
 }

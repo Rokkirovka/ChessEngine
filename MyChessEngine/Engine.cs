@@ -8,11 +8,11 @@ public class Engine(ChessGame game)
 {
     private int _score;
     
-    public EngineResult EvaluatePosition(int depth = 3)
+    public EngineResult EvaluatePosition(int depth = 4)
     {
         var color = game.CurrentPlayer;
 
-        if (depth == 0) return new EngineResult(_score, null);
+        if (depth == 0 || game.IsOver) return new EngineResult(_score, null);
 
         var isMaximizing = color == ChessColor.White;
         var bestScore = isMaximizing ? int.MinValue : int.MaxValue;
@@ -34,6 +34,11 @@ public class Engine(ChessGame game)
 
             bestScore = result.Score;
             bestMove = move;
+        }
+
+        if (bestMove is null)
+        {
+           Console. WriteLine();
         }
 
         return new EngineResult(bestScore, bestMove);
