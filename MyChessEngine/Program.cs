@@ -8,16 +8,9 @@ namespace MyChessEngine;
 class Program
 {
 
-    public static void Main(string[] args)
+    public static void Main()
     {
         BenchmarkRunner.Run<EngineBenchmark>();
-        // var bb = new BitBoard();
-        // for (int i = 0; i <= 55; i++)
-        // {
-        //     bb.SetBit(i);
-        // }
-        // Console.WriteLine(bb.ToString());
-        // Console.WriteLine((ulong)bb);
     }
 }
 
@@ -36,6 +29,6 @@ public class EngineBenchmark
     public ChessMove? FirstMoveBenchmark()
     {
         var engine = new Engine(_game);
-        return engine.EvaluatePosition(depth: 4).BestMove;
+        return engine.EvaluatePosition(depth: 5).BestMove;
     }
 }

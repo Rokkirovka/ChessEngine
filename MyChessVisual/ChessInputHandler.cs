@@ -15,9 +15,9 @@ public class ChessInputHandler
     private int? _lastMoveTo;
     private List<ChessMove> _possibleMoves = [];
     private readonly bool _autoPlayMode;
-    private readonly int _autoPlayDelay = 100;
+    private const int AutoPlayDelay = 100;
 
-    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = false)
+    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = true)
     {
         _chessGame = game;
         _engine = new Engine(game);
@@ -35,6 +35,8 @@ public class ChessInputHandler
         if (_autoPlayMode) return;
 
         if (sender is not PictureBox { Tag: int clickedCell } pictureBox) return;
+        
+        if (_chessGame.IsOver) return;
 
         if (_selectedCell == clickedCell)
         {
@@ -66,11 +68,11 @@ public class ChessInputHandler
         while (!_chessGame.IsOver && _autoPlayMode)
         {
             await MakeEngineMove();
-            await Task.Delay(_autoPlayDelay);
+            await Task.Delay(AutoPlayDelay);
 
             if (_chessGame.IsOver) continue;
             await MakeEngineMove();
-            await Task.Delay(_autoPlayDelay);
+            await Task.Delay(AutoPlayDelay);
         }
     }
     

@@ -1,7 +1,6 @@
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
-using MyChess.Models.Pieces;
 using MyChess.Rules.MoveGenerator;
 using MyChess.Services.MoveExecution;
 
@@ -81,6 +80,13 @@ public static class GameRules
     public static bool IsCheckmate(ChessColor color, ChessGame game)
     {
         if (!IsKingInCheck(color, game.GetClonedBoard())) return false;
+        var moves = game.GetAllPossibleMoves();
+        return !moves.Any();
+    }
+    
+    public static bool IsStalemate(ChessColor color, ChessGame game)
+    {
+        if (IsKingInCheck(color, game.GetClonedBoard())) return false;
         var moves = game.GetAllPossibleMoves();
         return !moves.Any();
     }

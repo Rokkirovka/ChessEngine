@@ -8,39 +8,64 @@ public class Engine(ChessGame game)
 {
     private int _score;
     
-    public EngineResult EvaluatePosition(int depth = 4)
+    public EngineResult EvaluatePosition(int depth = 5, int alpha = int.MinValue, int beta = int.MaxValue)
     {
         var color = game.CurrentPlayer;
-
-        if (depth == 0 || game.IsOver) return new EngineResult(_score, null);
-
         var isMaximizing = color == ChessColor.White;
-        var bestScore = isMaximizing ? int.MinValue : int.MaxValue;
+
+        if (game.IsCheckmate)
+        {
+            var mateScore = isMaximizing ? int.MinValue + 1 : int.MaxValue - 1;
+            return new EngineResult(mateScore, null);
+        }
+    
+        if (game.IsStalemate)
+        {
+            return new EngineResult(0, null);
+        }
+    
+        if (depth == 0)
+        {
+            return new EngineResult(_score, null);
+        }
+        
         ChessMove? bestMove = null;
 
         foreach (var move in game.GetAllPossibleMoves())
         {
             var previousScore = _score;
             var movesWillChange = game.GetCellsWillChange(move).ToArray();
+            
             RemoveCellsScore(movesWillChange);
             game.MakeMove(move);
             UpdateScore(movesWillChange);
-            var result = EvaluatePosition(depth - 1);
+            
+            var result = EvaluatePosition(depth - 1, alpha, beta);
+            
             game.UndoLastMove();
             _score = previousScore;
 
-            if (isMaximizing && result.Score <= bestScore) continue;
-            if (!isMaximizing && result.Score >= bestScore) continue;
-
-            bestScore = result.Score;
-            bestMove = move;
+            if (isMaximizing)
+            {
+                if (result.Score > alpha)
+                {
+                    alpha = result.Score;
+                    bestMove = move;
+                }
+                if (alpha >= beta) break;
+            }
+            else
+            {
+                if (result.Score < beta)
+                {
+                    beta = result.Score;
+                    bestMove = move;
+                }
+                if (beta <= alpha) break;
+            }
         }
-
-        if (bestMove is null)
-        {
-           Console. WriteLine();
-        }
-
+        
+        var bestScore = isMaximizing ? alpha : beta;
         return new EngineResult(bestScore, bestMove);
     }
     

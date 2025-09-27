@@ -24,6 +24,7 @@ public class ChessGame
     {
         _moveExecutor.ExecuteMove(move, _board, _state);
         IsCheckmate = GameRules.IsCheckmate(_state.CurrentMoveColor, this);
+        IsStalemate = GameRules.IsStalemate(_state.CurrentMoveColor, this);
     }
 
     public void UndoLastMove()
