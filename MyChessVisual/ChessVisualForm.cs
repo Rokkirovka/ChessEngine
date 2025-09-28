@@ -17,8 +17,8 @@ public partial class ChessVisualForm : Form
     
     private void SetFixedSize()
     {
-        this.FormBorderStyle = FormBorderStyle.FixedSingle;
-        this.MaximizeBox = false;
+        FormBorderStyle = FormBorderStyle.FixedSingle;
+        MaximizeBox = false;
     }
     
     private void InitializeChessComponents()

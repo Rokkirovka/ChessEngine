@@ -13,7 +13,7 @@ public abstract class ChessMove(ChessCell from, ChessCell to)
 
     public override string ToString()
     {
-        return (ChessCell)From + "-" + (ChessCell)To;
+        return $"{(ChessCell)From}{(ChessCell)To}".ToLower();
     }
 
     public override int GetHashCode() => HashCode.Combine(From, To);

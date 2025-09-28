@@ -3,6 +3,7 @@ using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
 using MyChess.Rules;
 using MyChess.Rules.SpecialRules;
+using MyChess.Services;
 using MyChess.Services.MoveExecution;
 
 namespace MyChess.Core;
@@ -18,6 +19,12 @@ public class ChessGame
     {
         _moveExecutor = new MoveExecutor(_strategyFactory);
         InitializeBoard();
+    }
+
+    public ChessGame(string fen)
+    {
+        _moveExecutor = new MoveExecutor(_strategyFactory);
+        InitializeFromFen(fen);
     }
 
     public void MakeMove(ChessMove move)
@@ -136,5 +143,115 @@ public class ChessGame
         
         _board.UpdateWhiteOccupancies();
         _board.UpdateBlackOccupancies();
+    }
+
+    private void InitializeFromFen(string fen)
+    {
+        var fenParts = fen.Split(' ');
+        if (fenParts.Length < 4) throw new ArgumentException("Invalid FEN string");
+
+        SetupBoardFromFen(fenParts[0]);
+        SetupCurrentPlayerFromFen(fenParts[1]);
+        SetupCastlingRightsFromFen(fenParts[2]);
+        SetupEnPassantFromFen(fenParts[3]);
+
+        _board.UpdateWhiteOccupancies();
+        _board.UpdateBlackOccupancies();
+    }
+
+    private void SetupBoardFromFen(string boardFen)
+    {
+        _board.BitBoards = new BitBoard[12];
+        for (var i = 0; i < 12; i++)
+        {
+            _board.BitBoards[i] = new BitBoard(0);
+        }
+
+        var ranks = boardFen.Split('/');
+        if (ranks.Length != 8)
+            throw new ArgumentException("Invalid board position in FEN");
+
+        var squareIndex = 56;
+
+        foreach (var rank in ranks)
+        {
+            var file = 0;
+            foreach (var c in rank)
+            {
+                if (char.IsDigit(c))
+                {
+                    var emptySquares = c - '0';
+                    file += emptySquares;
+                    squareIndex += emptySquares;
+                }
+                else
+                {
+                    var pieceIndex = GetPieceIndexFromFenChar(c);
+                    _board.BitBoards[pieceIndex].SetBit(squareIndex);
+                    file++;
+                    squareIndex++;
+                }
+            }
+            squareIndex -= 16;
+        }
+    }
+
+    private int GetPieceIndexFromFenChar(char c)
+    {
+        return c switch
+        {
+            'P' => 0,
+            'N' => 1,
+            'B' => 2,
+            'R' => 3,
+            'Q' => 4,
+            'K' => 5,
+            'p' => 6,
+            'n' => 7,
+            'b' => 8,
+            'r' => 9,
+            'q' => 10,
+            'k' => 11,
+            _ => throw new ArgumentException($"Invalid FEN character: {c}")
+        };
+    }
+
+    private void SetupCurrentPlayerFromFen(string activeColor)
+    {
+        _state.CurrentMoveColor = activeColor.ToLower() == "w" ? ChessColor.White : ChessColor.Black;
+    }
+
+    private void SetupCastlingRightsFromFen(string castlingRights)
+    {
+        if (!castlingRights.Contains('K')) _state.DisableCastling(CastlingRights.WhiteKingSide);
+        if (!castlingRights.Contains('Q')) _state.DisableCastling(CastlingRights.WhiteQueenSide);
+        if (!castlingRights.Contains('k')) _state.DisableCastling(CastlingRights.BlackKingSide);
+        if (!castlingRights.Contains('q')) _state.DisableCastling(CastlingRights.BlackQueenSide);
+    }
+
+    private void SetupEnPassantFromFen(string enPassantSquare)
+    { 
+        _state.EnPassantTarget = enPassantSquare == "-" ? null : SquareNotationToIndex(enPassantSquare);
+    }
+    
+    private int? SquareNotationToIndex(string square)
+    {
+        if (square.Length != 2)
+            return null;
+
+        var fileChar = square[0];
+        var rankChar = square[1];
+
+        if (fileChar < 'a' || fileChar > 'h' || rankChar < '1' || rankChar > '8')
+            return null;
+
+        var file = fileChar - 'a';
+        var rank = 8 - (rankChar - '0');
+        return rank * 8 + file;
+    }
+
+    public ChessMove CreateMoveFromString(string moveString)
+    {
+        return MoveFromStringFactory.CreateMoveFromString(_board, moveString);
     }
 }

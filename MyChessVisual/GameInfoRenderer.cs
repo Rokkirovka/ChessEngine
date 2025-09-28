@@ -72,8 +72,7 @@ namespace MyChessVisual
                 Text = "Новая игра",
                 Font = _infoFont
             };
-            
-            // Добавляем элементы на форму
+
             _parentControl.Controls.Add(_playerLabel);
             _parentControl.Controls.Add(_evaluationLabel);
             _parentControl.Controls.Add(_statusLabel);

@@ -4,7 +4,7 @@ namespace MyChess.Core;
 
 public class BoardState
 {
-    public ChessColor CurrentMoveColor { get; private set; }
+    public ChessColor CurrentMoveColor { get; set; }
     public int? EnPassantTarget { get; set; }
 
     public CastlingRights CastlingRights { get; private set; } =

@@ -7,9 +7,16 @@ namespace MyChessEngine;
 public class Engine(ChessGame game)
 {
     private int _score;
+    private bool _isInitialized;
     
     public EngineResult EvaluatePosition(int depth = 5, int alpha = int.MinValue, int beta = int.MaxValue)
     {
+        if (!_isInitialized)
+        {
+            _score = CalculateScore();
+            _isInitialized = true;
+        }
+        
         var color = game.CurrentPlayer;
         var isMaximizing = color == ChessColor.White;
 
