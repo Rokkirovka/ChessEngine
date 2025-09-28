@@ -22,6 +22,7 @@ public class PromotionMoveStrategy : IMoveStrategy
         var promotionMove = (PromotionMove)move;
         board.MovePiece(promotionMove.From, promotionMove.To);
         board.SetPiece(promotionMove.To, promotionMove.PromotionPiece);
+        boardState.EnPassantTarget = null;
     }
 
     public void Undo(MoveHistoryItem historyItem, ChessBoard board, BoardState boardState)

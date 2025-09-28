@@ -9,7 +9,7 @@ namespace MyChess.Services
     {
         private static ChessMove CreateMove(ChessBoard chessBoard, ChessCell from, ChessCell to, IChessPiece? promotionPiece = null)
         {
-            if (IsCastlingMove(from, to))
+            if (IsCastlingMove(chessBoard, from, to))
             {
                 return new CastlingMove(from, to);
             }
@@ -19,7 +19,7 @@ namespace MyChess.Services
                 return new EnPassantMove(from, to);
             }
 
-            if (promotionPiece != null && IsPromotionMove(from, to))
+            if (promotionPiece != null && IsPromotionMove(chessBoard, from, to))
             {
                 return new PromotionMove(from, to, promotionPiece);
             }
@@ -27,10 +27,11 @@ namespace MyChess.Services
             return new StandardMove(from, to);
         }
         
-        private static bool IsCastlingMove(ChessCell from, ChessCell to)
+        private static bool IsCastlingMove(ChessBoard board, ChessCell from, ChessCell to)
         {
             var fromIndex = (int)from;
             var toIndex = (int)to;
+            if (board.GetPiece(fromIndex) is not King) return false;
             var distance = Math.Abs(toIndex - fromIndex);
 
             var isHorizontalMove = fromIndex / 8 == toIndex / 8;
@@ -41,9 +42,9 @@ namespace MyChess.Services
         
         private static bool IsEnPassantMove(ChessBoard board, ChessCell from, ChessCell to)
         {
-            if (board.GetPiece((int)from) is not Pawn) return false; 
             var fromIndex = (int)from;
             var toIndex = (int)to;
+            if (board.GetPiece(fromIndex) is not Pawn) return false; 
 
             var rowDiff = Math.Abs(toIndex / 8 - fromIndex / 8);
             var colDiff = Math.Abs(toIndex % 8 - fromIndex % 8);
@@ -53,10 +54,12 @@ namespace MyChess.Services
             return isDiagonalMove && board.GetPiece((int)to) == null;
         }
         
-        private static bool IsPromotionMove(ChessCell from, ChessCell to)
+        private static bool IsPromotionMove(ChessBoard board, ChessCell from, ChessCell to)
         {
             var fromRow = (int)from / 8;
             var toRow = (int)to / 8;
+            
+            if (board.GetPiece((int)from) is not Pawn) return false;
 
             var whitePromotion = fromRow == 6 && toRow == 7;
             var blackPromotion = fromRow == 1 && toRow == 0;
@@ -71,8 +74,7 @@ namespace MyChess.Services
 
             var fromStr = moveString.Substring(0, 2).ToUpper();
             var toStr = moveString.Substring(2, 2).ToUpper();
-    
-            // Определяем фигуру превращения, если она указана
+
             IChessPiece? promotionPiece = null;
             if (moveString.Length > 4)
             {

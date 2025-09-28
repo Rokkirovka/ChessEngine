@@ -59,7 +59,11 @@ public class Engine(ChessGame game)
                     alpha = result.Score;
                     bestMove = move;
                 }
-                if (alpha >= beta) break;
+
+                if (alpha >= beta)
+                {
+                    break;
+                }
             }
             else
             {
@@ -73,6 +77,7 @@ public class Engine(ChessGame game)
         }
         
         var bestScore = isMaximizing ? alpha : beta;
+        if (depth == 5) Console.WriteLine();
         return new EngineResult(bestScore, bestMove);
     }
     

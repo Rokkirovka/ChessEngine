@@ -17,7 +17,6 @@ public class MoveExecutor(IMoveStrategyFactory strategyFactory) : IMoveExecutor
         strategy.Execute(move, board, boardState);
         _moveHistory.Push(historyItem);
         boardState.ChangeColor();
-        boardState.EnPassantTarget = null;
     }
 
     public void UndoMove(ChessBoard board, BoardState boardState)

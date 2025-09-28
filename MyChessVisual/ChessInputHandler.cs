@@ -17,7 +17,7 @@ public class ChessInputHandler
     private readonly bool _autoPlayMode;
     private const int AutoPlayDelay = 100;
 
-    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = true)
+    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = false)
     {
         _chessGame = game;
         _engine = new Engine(game);
@@ -85,7 +85,6 @@ public class ChessInputHandler
             var movesWillChange = _chessGame.GetCellsWillChange(engineResult.BestMove).ToArray();
             _engine.RemoveCellsScore(movesWillChange);
             _chessGame.MakeMove(engineResult.BestMove);
-            _engine.UpdateScore(movesWillChange);
             _lastMoveFrom = engineResult.BestMove.From;
             _lastMoveTo = engineResult.BestMove.To;
             UpdateBoardAfterMove();

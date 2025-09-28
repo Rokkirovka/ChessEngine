@@ -154,64 +154,51 @@ public class ChessGame
         SetupCurrentPlayerFromFen(fenParts[1]);
         SetupCastlingRightsFromFen(fenParts[2]);
         SetupEnPassantFromFen(fenParts[3]);
-
-        _board.UpdateWhiteOccupancies();
-        _board.UpdateBlackOccupancies();
     }
 
     private void SetupBoardFromFen(string boardFen)
     {
-        _board.BitBoards = new BitBoard[12];
-        for (var i = 0; i < 12; i++)
-        {
-            _board.BitBoards[i] = new BitBoard(0);
-        }
-
         var ranks = boardFen.Split('/');
-        if (ranks.Length != 8)
-            throw new ArgumentException("Invalid board position in FEN");
+        if (ranks.Length != 8) throw new ArgumentException("Invalid board position in FEN");
 
-        var squareIndex = 56;
-
-        foreach (var rank in ranks)
+        for (var rankIndex = 0; rankIndex < 8; rankIndex++)
         {
-            var file = 0;
-            foreach (var c in rank)
+            var rank = ranks[rankIndex];
+            var squareIndex = rankIndex * 8;
+
+            foreach (var chr in rank)
             {
-                if (char.IsDigit(c))
+                if (char.IsDigit(chr))
                 {
-                    var emptySquares = c - '0';
-                    file += emptySquares;
+                    var emptySquares = chr - '0';
                     squareIndex += emptySquares;
                 }
                 else
                 {
-                    var pieceIndex = GetPieceIndexFromFenChar(c);
-                    _board.BitBoards[pieceIndex].SetBit(squareIndex);
-                    file++;
+                    var piece = GetPieceFromFenChar(chr);
+                    _board.SetPiece(squareIndex, piece);
                     squareIndex++;
                 }
             }
-            squareIndex -= 16;
         }
     }
 
-    private int GetPieceIndexFromFenChar(char c)
+    private IChessPiece GetPieceFromFenChar(char c)
     {
         return c switch
         {
-            'P' => 0,
-            'N' => 1,
-            'B' => 2,
-            'R' => 3,
-            'Q' => 4,
-            'K' => 5,
-            'p' => 6,
-            'n' => 7,
-            'b' => 8,
-            'r' => 9,
-            'q' => 10,
-            'k' => 11,
+            'P' => Pawn.White,
+            'N' => Knight.White,
+            'B' => Bishop.White,
+            'R' => Rook.White,
+            'Q' => Queen.White,
+            'K' => King.White,
+            'p' => Pawn.Black,
+            'n' => Knight.Black,
+            'b' => Bishop.Black,
+            'r' => Rook.Black,
+            'q' => Queen.Black,
+            'k' => King.Black,
             _ => throw new ArgumentException($"Invalid FEN character: {c}")
         };
     }

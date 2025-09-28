@@ -21,6 +21,7 @@ public class EnPassantMoveStrategy : IMoveStrategy
     {
         board.MovePiece(move.From, move.To);
         board.RemovePiece(boardState.EnPassantTarget!.Value);
+        boardState.EnPassantTarget = null;
     }
 
     public void Undo(MoveHistoryItem historyItem, ChessBoard board, BoardState boardState)

@@ -14,6 +14,7 @@ public class StandardMoveStrategy : IMoveStrategy
     public void Execute(ChessMove move, ChessBoard board, BoardState boardState)
     {
         board.MovePiece(move.From, move.To);
+        boardState.EnPassantTarget = null;
         UpdateBoardState(move, board, boardState);
     }
 
@@ -44,7 +45,8 @@ public class StandardMoveStrategy : IMoveStrategy
         switch (piece)
         {
             case Pawn:
-                boardState.EnPassantTarget = move.To;
+                if (Math.Abs(move.From / 8 - move.To / 8) == 2)
+                    boardState.EnPassantTarget = move.To;
                 break;
             case King king:
                 if (king.Color == ChessColor.White)

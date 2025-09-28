@@ -21,6 +21,7 @@ public class CastlingMoveStrategy : IMoveStrategy
         var castlingMove = (CastlingMove)move;
         board.MovePiece(castlingMove.From, castlingMove.To);
         board.MovePiece(castlingMove.RookFrom, castlingMove.RookTo);
+        boardState.EnPassantTarget = null;
         UpdateBoardState(castlingMove, board, boardState);
     }
 
