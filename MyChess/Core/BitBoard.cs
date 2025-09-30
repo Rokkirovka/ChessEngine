@@ -1,5 +1,3 @@
-using MyChess.Models;
-
 namespace MyChess.Core;
 
 public class BitBoard(ulong value = 0UL)

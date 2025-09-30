@@ -1,7 +1,6 @@
-﻿using MyChessEngine;
-using MyChess.Core;
+﻿using MyChess.Core;
 using MyChess.Models.Moves;
-using MyChess.Services;
+using MyChessEngine.Core;
 
 namespace MyChess.UCI;
 
@@ -78,7 +77,7 @@ internal abstract class Program
         if (tokens[index] == "startpos")
         {
             _game = new ChessGame();
-            _engine = new Engine(_game);
+            _engine.UpdateGame(_game);
             index += 1;
         }
         else if (tokens[index] == "fen")
@@ -98,7 +97,7 @@ internal abstract class Program
 
     private static void ApplyMove(string moveString)
     {
-        if (_game == null) return;
+        if (_game == null || _engine == null) return;
         var move = ConvertUciMoveToChessMove(moveString);
         _game.MakeMove(move);
     }
@@ -122,7 +121,7 @@ internal abstract class Program
             }
         }
 
-        var result = _engine.EvaluatePosition(depth);
+        var result = _engine.FindBestMove(depth);
         
         if (result.BestMove is not null)
         {
@@ -133,6 +132,8 @@ internal abstract class Program
         {
             Console.WriteLine("bestmove 0000");
         }
+        
+        _game.PrintBoard();
     }
 
     private static string ConvertChessMoveToUci(ChessMove move)

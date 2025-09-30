@@ -74,36 +74,27 @@ namespace MyChess.Services
 
             var fromStr = moveString.Substring(0, 2).ToUpper();
             var toStr = moveString.Substring(2, 2).ToUpper();
-
-            IChessPiece? promotionPiece = null;
-            if (moveString.Length > 4)
-            {
-                var promotionChar = moveString[4].ToString().ToUpper();
-        
-                switch (promotionChar)
-                {
-                    case "Q":
-                        promotionPiece = Queen.White;
-                        break;
-                    case "R":
-                        promotionPiece =Rook.White;
-                        break;
-                    case "B":
-                        promotionPiece = Bishop.White;
-                        break;
-                    case "N":
-                        promotionPiece = Knight.White;
-                        break;
-                    default:
-                        throw new ArgumentException($"Invalid promotion piece: {promotionChar}");
-                }
-            }
-    
+            
             if (!Enum.TryParse<ChessCell>(fromStr, out var from))
                 throw new ArgumentException($"Invalid from cell: {fromStr}");
         
             if (!Enum.TryParse<ChessCell>(toStr, out var to))
                 throw new ArgumentException($"Invalid to cell: {toStr}");
+
+            IChessPiece? promotionPiece = null;
+            if (moveString.Length > 4)
+            {
+                var promotionChar = moveString[4].ToString().ToUpper();
+
+                promotionPiece = promotionChar switch
+                {
+                    "Q" => (int)from / 8 == 1 ? Queen.White : Queen.Black,
+                    "R" => (int)from / 8 == 1 ? Rook.White : Rook.Black,
+                    "B" => (int)from / 8 == 1 ? Bishop.White : Bishop.Black,
+                    "N" => (int)from / 8 == 1 ? Knight.White : Knight.Black,
+                    _ => throw new ArgumentException($"Invalid promotion piece: {promotionChar}")
+                };
+            }
     
             return CreateMove(board, from, to, promotionPiece);
         }

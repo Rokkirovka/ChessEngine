@@ -1,6 +1,6 @@
 using MyChess.Core;
 
-namespace MyChessEngine;
+namespace MyChessEngine.Utils;
 
 public static class Tester
 {

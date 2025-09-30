@@ -1,7 +1,7 @@
 using MyChess.Models;
 using MyChess.Core;
 using MyChess.Models.Moves;
-using MyChessEngine;
+using MyChessEngine.Core;
 
 namespace MyChessVisual;
 
@@ -15,24 +15,31 @@ public class ChessInputHandler
     private int? _lastMoveTo;
     private List<ChessMove> _possibleMoves = [];
     private readonly bool _autoPlayMode;
+    private readonly ChessColor _humanPlayer;
     private const int AutoPlayDelay = 100;
 
-    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = false)
+    public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = true, ChessColor humanPlayer = ChessColor.Black)
     {
         _chessGame = game;
         _engine = new Engine(game);
         _chessBoardRenderer = renderer;
         _autoPlayMode = autoPlayMode;
+        _humanPlayer = humanPlayer;
         
         if (_autoPlayMode)
         {
             StartAutoPlay();
+        }
+        else if (!IsHumanTurn())
+        {
+            MakeEngineMoveAsync();
         }
     }
 
     public void HandleSquareClick(object? sender, EventArgs e)
     {
         if (_autoPlayMode) return;
+        if (!IsHumanTurn()) return;
 
         if (sender is not PictureBox { Tag: int clickedCell } pictureBox) return;
         
@@ -46,15 +53,15 @@ public class ChessInputHandler
 
         var piece = _chessGame.GetPiece(clickedCell);
         if (_selectedCell is null && piece is null) return;
-        if (_selectedCell is null && piece != null && piece.Color != _chessGame.CurrentPlayer) return;
+        if (_selectedCell is null && piece != null && piece.Color != _humanPlayer) return;
 
-        if (_selectedCell is null && piece != null && piece.Color == _chessGame.CurrentPlayer)
+        if (_selectedCell is null && piece != null && piece.Color == _humanPlayer)
         {
             SelectPiece(clickedCell, pictureBox);
             return;
         }
 
-        if (piece != null && piece.Color == _chessGame.CurrentPlayer)
+        if (piece != null && piece.Color == _humanPlayer)
         {
             ChangeSelection(clickedCell, pictureBox);
             return;
@@ -63,6 +70,16 @@ public class ChessInputHandler
         _ = MakeMove((int)pictureBox.Tag);
     }
     
+    private bool IsHumanTurn()
+    {
+        return _chessGame.CurrentPlayer == _humanPlayer;
+    }
+
+    private bool IsEngineTurn()
+    {
+        return !_autoPlayMode && _chessGame.CurrentPlayer != _humanPlayer;
+    }
+
     private async void StartAutoPlay()
     {
         while (!_chessGame.IsOver && _autoPlayMode)
@@ -80,13 +97,28 @@ public class ChessInputHandler
     {
         await Task.Run(() =>
         {
-            var engineResult = _engine.EvaluatePosition();
+            var engineResult = _engine.FindBestMove();
             if (engineResult.BestMove is null) return;
-            var movesWillChange = _chessGame.GetCellsWillChange(engineResult.BestMove).ToArray();
-            _engine.RemoveCellsScore(movesWillChange);
             _chessGame.MakeMove(engineResult.BestMove);
             _lastMoveFrom = engineResult.BestMove.From;
             _lastMoveTo = engineResult.BestMove.To;
+            UpdateBoardAfterMove();
+        });
+    }
+
+    private async void MakeEngineMoveAsync()
+    {
+        if (_chessGame.IsOver || !IsEngineTurn()) return;
+
+        await Task.Run(() =>
+        {
+            var engineResult = _engine.FindBestMove();
+            if (engineResult.BestMove is null) return;
+    
+            _chessGame.MakeMove(engineResult.BestMove);
+            _lastMoveFrom = engineResult.BestMove.From;
+            _lastMoveTo = engineResult.BestMove.To;
+    
             UpdateBoardAfterMove();
         });
     }
@@ -123,25 +155,17 @@ public class ChessInputHandler
                     return;
                 }
             }
-
-            var movesWillChange = _chessGame.GetCellsWillChange(move).ToArray();
-            _engine.RemoveCellsScore(movesWillChange);
+            
             _chessGame.MakeMove(move);
-            _engine.UpdateScore(movesWillChange);
+        
             _lastMoveFrom = _selectedCell!.Value;
             _lastMoveTo = targetCell;
             UpdateBoardAfterMove();
 
-            await Task.Run(() =>
+            if (!_chessGame.IsOver && IsEngineTurn())
             {
-                var engineResult = _engine.EvaluatePosition();
-                if (engineResult.BestMove is null) throw new Exception();
-                _chessGame.MakeMove(engineResult.BestMove);
-                _lastMoveFrom = engineResult.BestMove.From;
-                _lastMoveTo = engineResult.BestMove.To;
-            });
-
-            UpdateBoardAfterMove();
+                await MakeEngineMove();
+            }
         }
 
         ClearSelection();

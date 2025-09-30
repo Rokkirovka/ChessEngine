@@ -1,4 +1,3 @@
-using MyChess.Models;
 using MyChess.Core;
 
 namespace MyChessVisual;

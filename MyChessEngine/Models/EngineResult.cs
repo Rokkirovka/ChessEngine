@@ -1,6 +1,6 @@
 using MyChess.Models.Moves;
 
-namespace MyChessEngine;
+namespace MyChessEngine.Models;
 
 public class EngineResult(int score, ChessMove? bestMove)
 {

@@ -15,6 +15,8 @@ public class ChessGame
     private readonly MoveStrategyFactory _strategyFactory = new();
     private readonly MoveExecutor _moveExecutor;
 
+    public int PlyCount;
+
     public ChessGame()
     {
         _moveExecutor = new MoveExecutor(_strategyFactory);
@@ -29,6 +31,7 @@ public class ChessGame
 
     public void MakeMove(ChessMove move)
     {
+        PlyCount++;
         _moveExecutor.ExecuteMove(move, _board, _state);
         IsCheckmate = GameRules.IsCheckmate(_state.CurrentMoveColor, this);
         IsStalemate = GameRules.IsStalemate(_state.CurrentMoveColor, this);
@@ -36,6 +39,7 @@ public class ChessGame
 
     public void UndoLastMove()
     {
+        PlyCount--;
         _moveExecutor.UndoMove(_board, _state);
         IsCheckmate = false;
     }
@@ -241,4 +245,74 @@ public class ChessGame
     {
         return MoveFromStringFactory.CreateMoveFromString(_board, moveString);
     }
+    
+    public void PrintBoard()
+{
+    Console.WriteLine("   a b c d e f g h");
+    Console.WriteLine("   ________________");
+    
+    for (var rank = 0; rank < 8; rank++)
+    {
+        Console.Write($"{8 - rank} |");
+        for (var file = 0; file < 8; file++)
+        {
+            var square = rank * 8 + file;
+            var piece = GetPiece(square);
+            
+            var symbol = piece switch
+            {
+                Pawn { Color: ChessColor.White } => "P",
+                Knight { Color: ChessColor.White } => "N",
+                Bishop { Color: ChessColor.White } => "B",
+                Rook { Color: ChessColor.White } => "R",
+                Queen { Color: ChessColor.White } => "Q",
+                King { Color: ChessColor.White } => "K",
+                Pawn { Color: ChessColor.Black } => "p",
+                Knight { Color: ChessColor.Black } => "n",
+                Bishop { Color: ChessColor.Black } => "b",
+                Rook { Color: ChessColor.Black } => "r",
+                Queen { Color: ChessColor.Black } => "q",
+                King { Color: ChessColor.Black } => "k",
+                _ => "."
+            };
+            
+            Console.Write($"{symbol} ");
+        }
+        Console.WriteLine($"| {8 - rank}");
+    }
+    
+    Console.WriteLine("   ----------------");
+    Console.WriteLine("   a b c d e f g h");
+    Console.WriteLine();
+
+    Console.WriteLine($"Current player: {CurrentPlayer}");
+    
+    var castlingRights = _state.CastlingRights;
+    Console.Write("Castling rights: ");
+    
+    if (castlingRights.HasFlag(CastlingRights.WhiteKingSide)) Console.Write("K");
+    if (castlingRights.HasFlag(CastlingRights.WhiteQueenSide)) Console.Write("Q");
+    if (castlingRights.HasFlag(CastlingRights.BlackKingSide)) Console.Write("k");
+    if (castlingRights.HasFlag(CastlingRights.BlackQueenSide)) Console.Write("q");
+    
+    if (castlingRights == 0) Console.Write("None");
+    Console.WriteLine();
+
+    var enPassantTarget = _state.EnPassantTarget;
+    if (enPassantTarget.HasValue)
+    {
+        var file = enPassantTarget.Value % 8;
+        var rank = 7 - (enPassantTarget.Value / 8);
+        var fileChar = (char)('a' + file);
+        var rankChar = (char)('1' + rank);
+        Console.WriteLine($"En passant target: {fileChar}{rankChar}");
+    }
+    else
+    {
+        Console.WriteLine("En passant target: None");
+    }
+
+    if (IsCheckmate) Console.WriteLine("CHECKMATE!");
+    else if (IsStalemate) Console.WriteLine("STALEMATE!");
+}
 }

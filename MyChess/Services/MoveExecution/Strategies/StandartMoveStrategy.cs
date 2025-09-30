@@ -3,7 +3,6 @@ using MyChess.Models;
 using MyChess.Models.MoveHistoryItems;
 using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
-using MyChess.Rules;
 using MyChess.Services.MoveExecution.Interfaces;
 using static MyChess.Models.ChessCell;
 
