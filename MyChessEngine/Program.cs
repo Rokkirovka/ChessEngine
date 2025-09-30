@@ -1,23 +1,33 @@
-﻿using MyChess.Core;
-using MyChessEngine.Core;
-using MyChessEngine.Models;
+﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Jobs;
+using MyChess.Core;
+using MyChessEngine.Utils;
 
-namespace MyChessEngine;
+[MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net80)]
+public class ChessBenchmark
+{
+    private ChessGame _game;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _game = new ChessGame();
+    }
+
+    [Benchmark]
+    [Arguments(4)]
+    public ulong PerftTest(int depth)
+    {
+        return Tester.PerftTest(_game, depth);
+    }
+}
 
 internal abstract class Program
 {
     public static void Main()
     {
-        var engine = new Engine
-        (new ChessGame(),
-            new SearchParameters
-            {
-                UseKillerMoves = true,
-                UseHistoryHeuristic = true,
-                UseQuiescenceSearch = true
-            }
-        );
-        engine.FindBestMove();
-        Console.WriteLine(engine.GetDiagnostics().NodesVisited);
+        BenchmarkRunner.Run<ChessBenchmark>();
     }
 }

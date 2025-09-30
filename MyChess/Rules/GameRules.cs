@@ -1,7 +1,9 @@
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
+using MyChess.Models.Pieces;
 using MyChess.Rules.MoveGenerator;
+using MyChess.Rules.SpecialRules;
 using MyChess.Services.MoveExecution;
 
 namespace MyChess.Rules;
@@ -34,7 +36,7 @@ public static class GameRules
             ? board.BitBoards[2]  | board.BitBoards[4]
             : board.BitBoards[8] | board.BitBoards[10];
 
-        return (BishopMoveGenerator.CalculateBishopAttacksWithBlocking(position, 
+        return (BishopMoveGenerator.GetBishopAttacks(position, 
             board.Occupancies[0] | board.Occupancies[1]) & bitBoard) != 0;
     }
 
@@ -43,7 +45,7 @@ public static class GameRules
         var bitBoard = cellColor == ChessColor.Black 
             ? board.BitBoards[3]  | board.BitBoards[4]
             : board.BitBoards[9] | board.BitBoards[10];
-        return (RookMoveGenerator.CalculateRookAttacksWithBlocking(position, 
+        return (RookMoveGenerator.GetRookAttacks(position, 
             board.Occupancies[0] | board.Occupancies[1]) & bitBoard) != 0;
     }
 
@@ -77,17 +79,75 @@ public static class GameRules
                || IsCellAttackedByDiagonal(square, board, defenderColor);
     }
 
-    public static bool IsCheckmate(ChessColor color, ChessGame game)
+    public static bool IsCheckmate(ChessColor color, ChessBoard board, BoardState boardState)
     {
-        if (!IsKingInCheck(color, game.GetClonedBoard())) return false;
-        var moves = game.GetAllPossibleMoves();
-        return !moves.Any();
+        if (!IsKingInCheck(color, board)) return false;
+        return !HasAnyValidMove(color, board, boardState);
     }
     
-    public static bool IsStalemate(ChessColor color, ChessGame game)
+    public static bool IsStalemate(ChessColor color, ChessBoard board, BoardState boardState)
     {
-        if (IsKingInCheck(color, game.GetClonedBoard())) return false;
-        var moves = game.GetAllPossibleMoves();
-        return !moves.Any();
+        if (IsKingInCheck(color, board)) return false;
+        return !HasAnyValidMove(color, board, boardState);
+    }
+    
+    private static bool HasAnyValidMove(ChessColor color, ChessBoard board, BoardState boardState)
+    {
+        var originalColor = boardState.CurrentMoveColor;
+        boardState.CurrentMoveColor = color;
+
+        try
+        {
+            for (var i = 0; i < 64; i++)
+            {
+                var piece = board.GetPiece(i);
+                if (piece is null || piece.Color != color) continue;
+
+                var friendlyPieces = color == ChessColor.White ? 
+                    board.Occupancies[0] : board.Occupancies[1];
+                var enemyPieces = color == ChessColor.White ? 
+                    board.Occupancies[1] : board.Occupancies[0];
+
+                var potentialMoves = piece
+                    .GetMoveGenerator()
+                    .GetPossibleMoves(i, enemyPieces, friendlyPieces);
+
+                foreach (var move in potentialMoves)
+                {
+                    if (IsValidMove(move, board, boardState))
+                        return true;
+                }
+
+                if (piece is King)
+                {
+                    foreach (var move in CastlingRule.GetCastlingMoves(i, board, boardState))
+                    {
+                        if (IsValidMove(move, board, boardState))
+                            return true;
+                    }
+                }
+                
+                if (piece is Pawn)
+                {
+                    foreach (var move in EnPassantRule.GetEnPassantMoves(i, board, boardState))
+                    {
+                        if (IsValidMove(move, board, boardState))
+                            return true;
+                    }
+                    
+                    foreach (var move in PromotionRule.GetPromotionMoves(i, board, boardState))
+                    {
+                        if (IsValidMove(move, board, boardState))
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        finally
+        {
+            boardState.CurrentMoveColor = originalColor;
+        }
     }
 }
