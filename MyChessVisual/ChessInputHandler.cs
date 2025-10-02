@@ -2,13 +2,14 @@ using MyChess.Models;
 using MyChess.Core;
 using MyChess.Models.Moves;
 using MyChessEngine.Core;
+using MyChessEngine.Models;
 
 namespace MyChessVisual;
 
 public class ChessInputHandler
 {
     private readonly ChessGame _chessGame;
-    private readonly Engine _engine;
+    private readonly ChessEngine _chessEngine;
     private readonly ChessBoardRenderer _chessBoardRenderer;
     private int? _selectedCell;
     private int? _lastMoveFrom;
@@ -21,7 +22,7 @@ public class ChessInputHandler
     public ChessInputHandler(ChessGame game, ChessBoardRenderer renderer, bool autoPlayMode = true, ChessColor humanPlayer = ChessColor.Black)
     {
         _chessGame = game;
-        _engine = new Engine(game);
+        _chessEngine = new ChessEngine(game);
         _chessBoardRenderer = renderer;
         _autoPlayMode = autoPlayMode;
         _humanPlayer = humanPlayer;
@@ -97,7 +98,12 @@ public class ChessInputHandler
     {
         await Task.Run(() =>
         {
-            var engineResult = _engine.FindBestMove();
+            var engineResult = _chessEngine.FindBestMove(new SearchParameters
+            {
+                Depth = 5,
+                UseKillerMoves = true,
+                UseHistoryHeuristic = false
+            });
             if (engineResult.BestMove is null) return;
             _chessGame.MakeMove(engineResult.BestMove);
             _lastMoveFrom = engineResult.BestMove.From;
@@ -112,7 +118,12 @@ public class ChessInputHandler
 
         await Task.Run(() =>
         {
-            var engineResult = _engine.FindBestMove();
+            var engineResult = _chessEngine.FindBestMove(new SearchParameters
+            {
+                Depth = 5,
+                UseKillerMoves = true,
+                UseHistoryHeuristic = false
+            });
             if (engineResult.BestMove is null) return;
     
             _chessGame.MakeMove(engineResult.BestMove);

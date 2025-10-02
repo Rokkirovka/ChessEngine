@@ -2,42 +2,29 @@ namespace MyChessEngine.Models;
 
 public record SearchParameters
 {
-    public int Depth { get; init; } = 5;
+    public required int Depth { get; set; }
     private int TimeLimitMs { get; init; }
-    public bool UseQuiescenceSearch { get; init; } = true;
+    public bool UseQuiescenceSearch { get; private init; } = true;
     public bool UseKillerMoves { get; init; } = true;
-    public bool UseHistoryHeuristic { get; init; } = true;
-    public bool UseMoveOrdering { get; init; } = true;
-    private bool UseTranspositionTable { get; init; }
-    private bool UseNullMovePruning { get; init; }
-    public int NullMoveReduction { get; init; } = 2;
-    private bool UseInternalIterativeDeepening { get; init; }
-
-    public static SearchParameters Default => new();
+    public bool UseHistoryTable { get; init; } = true;
     
     public static SearchParameters FastSearch => new()
     {
         Depth = 3,
-        UseQuiescenceSearch = true,
-        UseTranspositionTable = false
+        UseQuiescenceSearch = true
     };
     
     public static SearchParameters DeepSearch => new()
     {
         Depth = 8,
-        UseQuiescenceSearch = true,
-        UseTranspositionTable = true,
-        UseNullMovePruning = true
+        UseQuiescenceSearch = true
     };
     
     public static SearchParameters Tournament => new()
     {
         Depth = 15,
         TimeLimitMs = 30000,
-        UseQuiescenceSearch = true,
-        UseTranspositionTable = true,
-        UseNullMovePruning = true,
-        UseInternalIterativeDeepening = true
+        UseQuiescenceSearch = true
     };
     
     public static SearchParameters Debug => new()
@@ -51,9 +38,7 @@ public record SearchParameters
         return new SearchParameters
         {
             Depth = defaultDepth,
-            TimeLimitMs = timeLimitMs,
-            UseQuiescenceSearch = true,
-            UseTranspositionTable = true
+            TimeLimitMs = timeLimitMs
         };
     }
     
@@ -71,9 +56,6 @@ public record SearchParameters
         var features = new List<string>();
         
         if (UseQuiescenceSearch) features.Add("QSearch");
-        if (UseTranspositionTable) features.Add("TT");
-        if (UseNullMovePruning) features.Add("NullMove");
-        if (UseInternalIterativeDeepening) features.Add("IID");
         
         var featuresStr = features.Count > 0 ? $" [{string.Join(", ", features)}]" : "";
         var timeStr = TimeLimitMs > 0 ? $", Time: {TimeLimitMs}ms" : "";

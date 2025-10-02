@@ -32,12 +32,6 @@ public class StandardMoveStrategy : IMoveStrategy
         return new StandardMoveHistoryItem(move, stateBeforeMove, board.GetPiece(move.To));
     }
 
-    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
-    {
-        yield return move.From;
-        yield return move.To;
-    }
-
     private void UpdateBoardState(ChessMove move, ChessBoard board, BoardState boardState)
     {
         var piece = board.GetPiece(move.To);

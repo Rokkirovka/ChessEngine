@@ -41,10 +41,4 @@ public class PromotionMoveStrategy : IMoveStrategy
     {
         return new PromotionMoveHistoryItem(move, stateBeforeMove, board.GetPiece(move.To));
     }
-
-    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
-    {
-        yield return move.From;
-        yield return move.To;
-    }
 }

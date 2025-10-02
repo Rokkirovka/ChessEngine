@@ -38,15 +38,6 @@ public class CastlingMoveStrategy : IMoveStrategy
         return new CastlingMoveHistoryItem(move, stateBeforeMove);
     }
 
-    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
-    {
-        var castlingMove = (CastlingMove)move;
-        yield return move.From;
-        yield return move.To;
-        yield return castlingMove.RookFrom;
-        yield return castlingMove.RookTo;
-    }
-
     private void UpdateBoardState(CastlingMove castlingMove, ChessBoard board, BoardState boardState)
     {
         var color = board.GetPiece(castlingMove.To)!.Color;

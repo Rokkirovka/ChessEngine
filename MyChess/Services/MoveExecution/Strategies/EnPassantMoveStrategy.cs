@@ -38,11 +38,4 @@ public class EnPassantMoveStrategy : IMoveStrategy
     {
         return new EnPassantMoveHistoryItem(move, stateBeforeMove);
     }
-
-    public IEnumerable<int> GetCellsWillChange(ChessMove move, ChessBoard board, BoardState boardState)
-    {
-        yield return move.From;
-        yield return move.To;
-        yield return boardState.EnPassantTarget!.Value;
-    }
 }

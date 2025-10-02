@@ -1,24 +1,19 @@
 ﻿using MyChess.Core;
 using MyChess.Models.Moves;
 using MyChessEngine.Core;
+using MyChessEngine.Models;
 
 namespace MyChess.UCI;
 
-internal abstract class Program
+internal abstract class UciProtocol
 {
     private static ChessGame? _game;
-    private static Engine? _engine;
+    private static ChessEngine _engine = new();
+    private const int DefaultDepth = 5;
 
     private static void Main()
     {
-        InitializeEngine();
         RunUciProtocol();
-    }
-
-    private static void InitializeEngine()
-    {
-        _game = new ChessGame();
-        _engine = new Engine(_game);
     }
 
     private static void RunUciProtocol()
@@ -29,33 +24,34 @@ internal abstract class Program
             if (string.IsNullOrEmpty(input)) continue;
 
             var tokens = input.Split(' ');
-            
+
             switch (tokens[0])
             {
                 case "uci":
                     HandleUci();
                     break;
-                    
+
                 case "isready":
                     Console.WriteLine("readyok");
                     break;
-                    
+
                 case "position":
                     HandlePosition(tokens);
                     break;
-                    
+
                 case "go":
                     HandleGo(tokens);
                     break;
-                    
+
                 case "quit":
                     return;
-                    
+
                 case "stop":
                     break;
-                    
+
                 case "ucinewgame":
-                    InitializeEngine();
+                    _game = new ChessGame();
+                    _engine = new ChessEngine();
                     break;
             }
         }
@@ -68,51 +64,33 @@ internal abstract class Program
         Console.WriteLine("uciok");
     }
 
-    static void HandlePosition(string[] tokens)
+    private static void HandlePosition(string[] tokens)
     {
-        if (_game == null || _engine == null) return;
-
         var index = 1;
-        
+
         if (tokens[index] == "startpos")
         {
             _game = new ChessGame();
-            _engine.UpdateGame(_game);
             index += 1;
         }
-        else if (tokens[index] == "fen")
+        else
         {
             var fen = string.Join(" ", tokens.Skip(2).Take(6));
             _game = new ChessGame(fen);
-            _engine = new Engine(_game);
             index += 7;
         }
 
         if (index >= tokens.Length || tokens[index] != "moves") return;
         for (var i = index + 1; i < tokens.Length; i++)
         {
-            ApplyMove(tokens[i]);
+            var move = _game.CreateMoveFromString(tokens[i]);
+            _game.MakeMove(move);
         }
-    }
-
-    private static void ApplyMove(string moveString)
-    {
-        if (_game == null || _engine == null) return;
-        var move = ConvertUciMoveToChessMove(moveString);
-        _game.MakeMove(move);
-    }
-
-    private static ChessMove ConvertUciMoveToChessMove(string moveString)
-    {
-        return _game!.CreateMoveFromString(moveString);
     }
 
     private static void HandleGo(string[] tokens)
     {
-        if (_engine == null || _game == null) return;
-
-        var depth = 5;
-        
+        var depth = DefaultDepth;
         for (var i = 1; i < tokens.Length; i++)
         {
             if (tokens[i] == "depth" && i + 1 < tokens.Length)
@@ -121,8 +99,15 @@ internal abstract class Program
             }
         }
 
-        var result = _engine.FindBestMove(depth);
-        
+        _game ??= new ChessGame();
+        var result = _engine.FindBestMove(_game, new SearchParameters { Depth = depth });
+
+        Console.Write($"info " +
+                      // $"score cp {result.Score} " +
+                      $"depth {depth} " +
+                      $"nodes {result.NodesVisited} " +
+                      $"pv" + "\n");
+
         if (result.BestMove is not null)
         {
             var uciMove = ConvertChessMoveToUci(result.BestMove);
@@ -132,8 +117,6 @@ internal abstract class Program
         {
             Console.WriteLine("bestmove 0000");
         }
-        
-        _game.PrintBoard();
     }
 
     private static string ConvertChessMoveToUci(ChessMove move)

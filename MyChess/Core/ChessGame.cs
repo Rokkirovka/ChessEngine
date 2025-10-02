@@ -10,7 +10,7 @@ namespace MyChess.Core;
 
 public class ChessGame
 {
-    private readonly ChessBoard _board = new();
+    public readonly ChessBoard Board = new();
     private readonly BoardState _state = new();
     private readonly MoveStrategyFactory _strategyFactory = new();
     private readonly MoveExecutor _moveExecutor;
@@ -32,29 +32,29 @@ public class ChessGame
     public void MakeMove(ChessMove move)
     {
         PlyCount++;
-        _moveExecutor.ExecuteMove(move, _board, _state);
+        _moveExecutor.ExecuteMove(move, Board, _state);
     }
 
     public void UndoLastMove()
     {
         PlyCount--;
-        _moveExecutor.UndoMove(_board, _state);
+        _moveExecutor.UndoMove(Board, _state);
     }
 
     public IEnumerable<ChessMove> GetValidMoves(int cell)
     {
-        var piece = _board.GetPiece(cell);
+        var piece = Board.GetPiece(cell);
         if (piece is null || piece.Color != CurrentPlayer) yield break;
 
         var friendlyPieces = CurrentPlayer == ChessColor.White ? 
-            _board.Occupancies[0] : _board.Occupancies[1];
+            Board.Occupancies[0] : Board.Occupancies[1];
         var enemyPieces = CurrentPlayer == ChessColor.White ? 
-            _board.Occupancies[1] : _board.Occupancies[0];
+            Board.Occupancies[1] : Board.Occupancies[0];
 
         var potentialMoves = piece
             .GetMoveGenerator()
             .GetPossibleMoves(cell, enemyPieces, friendlyPieces)
-            .Where(move => GameRules.IsValidMove(move, _board, _state));
+            .Where(move => GameRules.IsValidMove(move, Board, _state));
 
         foreach (var move in potentialMoves)
         {
@@ -64,8 +64,8 @@ public class ChessGame
         if (piece is King)
         {
             var moves = CastlingRule
-                .GetCastlingMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
+                .GetCastlingMoves(cell, Board, _state)
+                .Where(move => GameRules.IsValidMove(move, Board, _state));
             
             foreach (var move in moves)
             {
@@ -76,8 +76,8 @@ public class ChessGame
         if (piece is Pawn)
         {
             var moves = EnPassantRule
-                .GetEnPassantMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
+                .GetEnPassantMoves(cell, Board, _state)
+                .Where(move => GameRules.IsValidMove(move, Board, _state));
             
             foreach (var move in moves)
             {
@@ -85,8 +85,8 @@ public class ChessGame
             }
             
             moves = PromotionRule
-                .GetPromotionMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
+                .GetPromotionMoves(cell, Board, _state)
+                .Where(move => GameRules.IsValidMove(move, Board, _state));
             
             foreach (var move in moves)
             {
@@ -95,31 +95,25 @@ public class ChessGame
         }
     }
 
-    public IEnumerable<int> GetCellsWillChange(ChessMove move)
-    {
-        var strategy = _strategyFactory.GetMoveStrategy(move);
-        return strategy.GetCellsWillChange(move, _board, _state);
-    }
-
     public ChessColor CurrentPlayer => _state.CurrentMoveColor;
 
-    public IChessPiece? GetPiece(int cell) => _board.GetPiece(cell);
+    public IChessPiece? GetPiece(int cell) => Board.GetPiece(cell);
 
-    public bool IsCheckmate => GameRules.IsCheckmate(_state.CurrentMoveColor, _board, _state);
-    public bool IsStalemate => GameRules.IsStalemate(_state.CurrentMoveColor, _board, _state);
+    public bool IsCheckmate => GameRules.IsCheckmate(_state.CurrentMoveColor, Board, _state);
+    public bool IsStalemate => GameRules.IsStalemate(_state.CurrentMoveColor, Board, _state);
     public bool IsOver => IsCheckmate || IsStalemate;
 
     private IEnumerable<ChessMove> GetAllRawMoves()
     {
         for (var i = 0; i < 64; i++)
         {
-            var piece = _board.GetPiece(i);
+            var piece = Board.GetPiece(i);
             if (piece is null || piece.Color != CurrentPlayer) continue;
 
             var friendlyPieces = CurrentPlayer == ChessColor.White ? 
-                _board.Occupancies[0] : _board.Occupancies[1];
+                Board.Occupancies[0] : Board.Occupancies[1];
             var enemyPieces = CurrentPlayer == ChessColor.White ? 
-                _board.Occupancies[1] : _board.Occupancies[0];
+                Board.Occupancies[1] : Board.Occupancies[0];
 
             var potentialMoves = piece
                 .GetMoveGenerator()
@@ -132,7 +126,7 @@ public class ChessGame
 
             if (piece is King)
             {
-                foreach (var move in CastlingRule.GetCastlingMoves(i, _board, _state))
+                foreach (var move in CastlingRule.GetCastlingMoves(i, Board, _state))
                 {
                     yield return move;
                 }
@@ -140,12 +134,12 @@ public class ChessGame
             
             if (piece is Pawn)
             {
-                foreach (var move in EnPassantRule.GetEnPassantMoves(i, _board, _state))
+                foreach (var move in EnPassantRule.GetEnPassantMoves(i, Board, _state))
                 {
                     yield return move;
                 }
                 
-                foreach (var move in PromotionRule.GetPromotionMoves(i, _board, _state))
+                foreach (var move in PromotionRule.GetPromotionMoves(i, Board, _state))
                 {
                     yield return move;
                 }
@@ -155,14 +149,12 @@ public class ChessGame
 
     public IEnumerable<ChessMove> GetAllPossibleMoves()
     {
-        return GetAllRawMoves().Where(move => GameRules.IsValidMove(move, _board, _state));
+        return GetAllRawMoves().Where(move => GameRules.IsValidMove(move, Board, _state));
     }
-
-    public ChessBoard GetClonedBoard() => _board.Clone();
 
     private void InitializeBoard()
     {
-        _board.BitBoards =
+        Board.BitBoards =
         [
             new BitBoard(0x00FF000000000000),
             new BitBoard(0x4200000000000000),
@@ -178,8 +170,8 @@ public class ChessGame
             new BitBoard(0x0000000000000010)
         ];
         
-        _board.UpdateWhiteOccupancies();
-        _board.UpdateBlackOccupancies();
+        Board.UpdateWhiteOccupancies();
+        Board.UpdateBlackOccupancies();
     }
 
     private void InitializeFromFen(string fen)
@@ -213,7 +205,7 @@ public class ChessGame
                 else
                 {
                     var piece = GetPieceFromFenChar(chr);
-                    _board.SetPiece(squareIndex, piece);
+                    Board.SetPiece(squareIndex, piece);
                     squareIndex++;
                 }
             }
@@ -276,7 +268,7 @@ public class ChessGame
 
     public ChessMove CreateMoveFromString(string moveString)
     {
-        return MoveFromStringFactory.CreateMoveFromString(_board, moveString);
+        return MoveFromStringFactory.CreateMoveFromString(Board, moveString);
     }
     
     public void PrintBoard()

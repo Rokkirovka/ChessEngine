@@ -1,14 +1,16 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
 using MyChess.Core;
 using MyChessEngine.Utils;
+
+namespace MyChessEngine;
 
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net80)]
 public class ChessBenchmark
 {
-    private ChessGame _game;
+    private ChessGame _game = new ChessGame();
 
     [GlobalSetup]
     public void Setup()
