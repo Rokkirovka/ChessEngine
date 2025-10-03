@@ -9,7 +9,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 5;
+    private const int DefaultDepth = 6;
 
     private static void Main()
     {

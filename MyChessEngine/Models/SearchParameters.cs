@@ -7,6 +7,7 @@ public record SearchParameters
     public bool UseQuiescenceSearch { get; private init; } = true;
     public bool UseKillerMoves { get; init; } = true;
     public bool UseHistoryTable { get; init; } = true;
+    public bool UseNullMovePruning { get; init; } = true;
     
     public static SearchParameters FastSearch => new()
     {

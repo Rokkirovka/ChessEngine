@@ -59,8 +59,19 @@ public static class AlphaBetaSearch
         }
         if (searchParameters.Depth == 0)
         {
-            if (!searchParameters.UseQuiescenceSearch) return Evaluator.EvaluatePosition(game.Board) * color;
+            if (!searchParameters.UseQuiescenceSearch) return Evaluator.EvaluatePosition(game.GetClonedBoard()) * color;
             return QuiescenceSearch.Search(game, searchParameters.Depth, evaluator, ref nodesVisited, alpha, beta, color);
+        }
+
+        if (searchParameters.Depth > 2 && !game.IsKingInCheck() && searchParameters.UseNullMovePruning)
+        {
+            game.SwapPlayers();
+            var enPassantPiece = game.GetEnPassantTarget();
+            game.SetEnPassantTarget(null);
+            var score = -Search(game, searchParameters with{Depth = searchParameters.Depth - 3}, evaluator, ref nodesVisited, -beta, -beta + 1, -color);
+            game.SetEnPassantTarget(enPassantPiece);
+            game.SwapPlayers();
+            if (score >= beta) return beta;
         }
 
         var moves = game.GetAllPossibleMoves()

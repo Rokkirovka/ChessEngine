@@ -10,7 +10,7 @@ public static class QuiescenceSearch
         if (game.IsCheckmate) return -100000 - depth;
         if (game.IsStalemate) return 0;
         nodesVisited++;
-        var evaluation = Evaluator.EvaluatePosition(game.Board) * color;
+        var evaluation = Evaluator.EvaluatePosition(game.GetClonedBoard()) * color;
 
         if (evaluation >= beta) return beta;
         if (evaluation > alpha) alpha = evaluation;
