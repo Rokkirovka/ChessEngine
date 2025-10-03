@@ -15,7 +15,7 @@ public class ChessGame
     private readonly MoveStrategyFactory _strategyFactory = new();
     private readonly MoveExecutor _moveExecutor;
 
-    public int PlyCount;
+    public int Ply;
 
     public ChessGame()
     {
@@ -31,13 +31,13 @@ public class ChessGame
 
     public void MakeMove(ChessMove move)
     {
-        PlyCount++;
+        Ply++;
         _moveExecutor.ExecuteMove(move, _board, _state);
     }
 
     public void UndoLastMove()
     {
-        PlyCount--;
+        Ply--;
         _moveExecutor.UndoMove(_board, _state);
     }
 

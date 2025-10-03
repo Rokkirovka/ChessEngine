@@ -48,11 +48,11 @@ public class Evaluator
                 ];
         }
 
-        if (game.PlyCount < MaxPly)
+        if (game.Ply < MaxPly)
         {
             for (var i = 0; i < KillerSlots; i++)
             {
-                if (!move.Equals(_killerMoves[i, game.PlyCount])) continue;
+                if (!move.Equals(_killerMoves[i, game.Ply])) continue;
                 moveScore += 900_000 - i * 1000;
                 return moveScore;
             }

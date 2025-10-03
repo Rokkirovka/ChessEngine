@@ -103,10 +103,11 @@ internal abstract class UciProtocol
         var result = _engine.FindBestMove(_game, new SearchParameters { Depth = depth });
 
         Console.Write($"info " +
-                      // $"score cp {result.Score} " +
+                      $"score cp {result.Score} " +
                       $"depth {depth} " +
                       $"nodes {result.NodesVisited} " +
-                      $"pv" + "\n");
+                      $"pv" +
+                      string.Join(" ", result.PrincipalVariation.Select(move => move.ToString())) + "\n");
 
         if (result.BestMove is not null)
         {
