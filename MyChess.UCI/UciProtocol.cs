@@ -9,7 +9,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 6;
+    private const int DefaultDepth = 5;
 
     private static void Main()
     {
@@ -100,16 +100,24 @@ internal abstract class UciProtocol
         }
 
         _game ??= new ChessGame();
-        var result = _engine.FindBestMove(_game, new SearchParameters { Depth = depth });
+        
+        EngineResult? result = null;
 
-        Console.Write($"info " +
-                      $"score cp {result.Score} " +
-                      $"depth {depth} " +
-                      $"nodes {result.NodesVisited} " +
-                      $"pv" +
-                      string.Join(" ", result.PrincipalVariation.Select(move => move.ToString())) + "\n");
+        for (var currentDepth = 1; currentDepth <= depth; currentDepth++)
+        {
+            result = _engine.FindBestMove(_game, new SearchParameters { Depth = currentDepth });
 
-        if (result.BestMove is not null)
+            Console.Write($"info " +
+                          $"score cp {result.Score} " +
+                          $"depth {currentDepth} " +
+                          $"nodes {result.NodesVisited} " +
+                          $"pv " +
+                          string.Join(" ", result.PrincipalVariation
+                              .TakeWhile(move => move is not null)
+                              .Select(move => move.ToString())) + "\n");
+        }
+
+        if (result!.BestMove is not null)
         {
             var uciMove = ConvertChessMoveToUci(result.BestMove);
             Console.WriteLine($"bestmove {uciMove}");

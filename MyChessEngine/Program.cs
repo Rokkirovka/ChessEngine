@@ -30,6 +30,6 @@ internal abstract class Program
 {
     public static void Main()
     {
-        BenchmarkRunner.Run<ChessBenchmark>();
+        Console.WriteLine(PieceSquareTables.BlackPassedMasks[45].ToString());
     }
 }

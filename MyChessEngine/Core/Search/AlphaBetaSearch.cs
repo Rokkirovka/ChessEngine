@@ -47,7 +47,7 @@ public static class AlphaBetaSearch
             }
         }
 
-        return new EngineResult(alpha, bestMove, nodesVisited, pvArray[..searchParameters.Depth]);
+        return new EngineResult(alpha * color, bestMove, nodesVisited, pvArray[..searchParameters.Depth]);
     }
 
     private static int Search(

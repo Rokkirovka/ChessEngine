@@ -1,6 +1,7 @@
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
+using MyChess.Rules.MoveGenerator;
 using MyChessEngine.Utils;
 
 namespace MyChessEngine.Core.Evaluation;
@@ -26,6 +27,114 @@ public class Evaluator
 
             score += PieceSquareTables.GetPieceTable(piece)[tableIndex] * factor;
             score += PieceSquareTables.GetPiecePrice(piece) * factor;
+        }
+
+        BitBoard whitePawns = (ulong)board.BitBoards[0];
+        while (whitePawns != 0)
+        {
+            var cell = whitePawns.GetLeastSignificantBitIndex();
+            whitePawns.PopBit(cell);
+            var doublePawns = ((BitBoard)(board.BitBoards[0] & PieceSquareTables.FileMasks[cell])).CountBits();
+            score += PieceSquareTables.DoublePawnPenalty * doublePawns;
+            if ((board.BitBoards[0] & PieceSquareTables.IsolatedMasks[cell]) == 0)
+                score += PieceSquareTables.IsolatedPawnPenalty;
+            if ((board.BitBoards[6] & PieceSquareTables.WhitePassedMasks[cell]) == 0)
+                score += PieceSquareTables.PassedPawnBonus[7 - cell / 8];
+        }
+        
+        BitBoard blackPawns = (ulong)board.BitBoards[6];
+        while (blackPawns != 0)
+        {
+            var cell = blackPawns.GetLeastSignificantBitIndex();
+            blackPawns.PopBit(cell);
+            var doublePawns = ((BitBoard)(board.BitBoards[6] & PieceSquareTables.FileMasks[cell])).CountBits();
+            score -= PieceSquareTables.DoublePawnPenalty * doublePawns;
+            if ((board.BitBoards[6] & PieceSquareTables.IsolatedMasks[cell]) == 0)
+                score -= PieceSquareTables.IsolatedPawnPenalty;
+            if ((board.BitBoards[0] & PieceSquareTables.BlackPassedMasks[cell]) == 0)
+                score -= PieceSquareTables.PassedPawnBonus[cell / 8];
+        }
+        
+        BitBoard whiteRooks = (ulong)board.BitBoards[3];
+        while (whiteRooks != 0)
+        {
+            var cell = whiteRooks.GetLeastSignificantBitIndex();
+            whiteRooks.PopBit(cell);
+            if ((board.BitBoards[0] & PieceSquareTables.FileMasks[cell]) == 0)
+                score += PieceSquareTables.SemiOpenFileScore;
+            if ((board.BitBoards[0] & board.BitBoards[6] & PieceSquareTables.FileMasks[cell]) == 0)
+                score += PieceSquareTables.OpenFileScore;
+            score += RookMoveGenerator.GetRookAttacks(cell, board.Occupancies[0] | board.Occupancies[1]).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard blackRooks = (ulong)board.BitBoards[9];
+        while (blackRooks != 0)
+        {
+            var cell = blackRooks.GetLeastSignificantBitIndex();
+            blackRooks.PopBit(cell);
+            if ((board.BitBoards[6] & PieceSquareTables.FileMasks[cell]) == 0)
+                score -= PieceSquareTables.SemiOpenFileScore;
+            if ((board.BitBoards[0] & board.BitBoards[6] & PieceSquareTables.FileMasks[cell]) == 0)
+                score -= PieceSquareTables.OpenFileScore;
+            score -= RookMoveGenerator.GetRookAttacks(cell, board.Occupancies[0] | board.Occupancies[1]).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard whiteBishops = (ulong)board.BitBoards[2];
+        while (whiteBishops != 0)
+        {
+            var cell = whiteBishops.GetLeastSignificantBitIndex();
+            whiteBishops.PopBit(cell);
+            score += BishopMoveGenerator.GetBishopAttacks(cell, board.Occupancies[0] | board.Occupancies[1]).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard blackBishops = (ulong)board.BitBoards[8];
+        while (blackBishops != 0)
+        {
+            var cell = blackBishops.GetLeastSignificantBitIndex();
+            blackBishops.PopBit(cell);
+            score -= BishopMoveGenerator.GetBishopAttacks(cell, board.Occupancies[0] | board.Occupancies[1]).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard whiteQueens = (ulong)board.BitBoards[4];
+        while (whiteQueens != 0)
+        {
+            var cell = whiteQueens.GetLeastSignificantBitIndex();
+            whiteQueens.PopBit(cell);
+            score += ((BitBoard)(BishopMoveGenerator.GetBishopAttacks(cell, board.Occupancies[0] | board.Occupancies[1])
+                | RookMoveGenerator.GetRookAttacks(cell, board.Occupancies[0] | board.Occupancies[1]))).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard blackQueens = (ulong)board.BitBoards[10];
+        while (blackQueens != 0)
+        {
+            var cell = blackQueens.GetLeastSignificantBitIndex();
+            blackQueens.PopBit(cell);
+            score -= ((BitBoard)(BishopMoveGenerator.GetBishopAttacks(cell, board.Occupancies[0] | board.Occupancies[1])
+                                 | RookMoveGenerator.GetRookAttacks(cell, board.Occupancies[0] | board.Occupancies[1]))).CountBits() * PieceSquareTables.MobilityBonus;
+        }
+        
+        BitBoard whiteKing = (ulong)board.BitBoards[5];
+        while (whiteKing != 0)
+        {
+            var cell = whiteKing.GetLeastSignificantBitIndex();
+            whiteKing.PopBit(cell);
+            if ((board.BitBoards[0] & PieceSquareTables.FileMasks[cell]) == 0)
+                score -= PieceSquareTables.SemiOpenFileScore;
+            if ((board.BitBoards[0] & board.BitBoards[6] & PieceSquareTables.FileMasks[cell]) == 0)
+                score -= PieceSquareTables.OpenFileScore;
+            score += ((BitBoard)(KingMoveGenerator.KingAttackMasks[cell] & board.Occupancies[0])).CountBits() * PieceSquareTables.KingShieldBonus;
+        }
+        
+        BitBoard blackKing = (ulong)board.BitBoards[11];
+        while (blackKing != 0)
+        {
+            var cell = blackKing.GetLeastSignificantBitIndex();
+            blackKing.PopBit(cell);
+            if ((board.BitBoards[0] & PieceSquareTables.FileMasks[cell]) == 0)
+                score += PieceSquareTables.SemiOpenFileScore;
+            if ((board.BitBoards[0] & board.BitBoards[6] & PieceSquareTables.FileMasks[cell]) == 0)
+                score += PieceSquareTables.OpenFileScore;
+            score -= ((BitBoard)(KingMoveGenerator.KingAttackMasks[cell] & board.Occupancies[1])).CountBits() * PieceSquareTables.KingShieldBonus;
         }
 
         return score;
