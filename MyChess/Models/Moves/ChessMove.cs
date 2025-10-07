@@ -1,3 +1,5 @@
+using System;
+
 namespace MyChess.Models.Moves;
 
 public abstract class ChessMove(ChessCell from, ChessCell to)

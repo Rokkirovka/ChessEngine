@@ -1,3 +1,4 @@
+using System.Linq;
 using MyChess.Core;
 using MyChessEngine.Core.Evaluation;
 

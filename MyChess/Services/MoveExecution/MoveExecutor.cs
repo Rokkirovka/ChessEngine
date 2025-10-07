@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using MyChess.Core;
 using MyChess.Models.MoveHistoryItems;
 using MyChess.Models.Moves;

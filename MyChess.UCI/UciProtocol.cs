@@ -1,4 +1,6 @@
-﻿using MyChess.Core;
+﻿using System;
+using System.Linq;
+using MyChess.Core;
 using MyChess.Models.Moves;
 using MyChessEngine.Core;
 using MyChessEngine.Models;
