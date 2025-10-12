@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;

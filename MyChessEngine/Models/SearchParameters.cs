@@ -1,15 +1,14 @@
-using System.Collections.Generic;
-
 namespace MyChessEngine.Models;
 
 public record SearchParameters
 {
-    public required int Depth { get; set; }
+    public required int Depth { get; init; }
     private int TimeLimitMs { get; init; }
     public bool UseQuiescenceSearch { get; private init; } = true;
     public bool UseKillerMoves { get; init; } = true;
     public bool UseHistoryTable { get; init; } = true;
     public bool UseNullMovePruning { get; init; } = true;
+    public bool UseTranspositionTable { get; } = true;
     
     public static SearchParameters FastSearch => new()
     {

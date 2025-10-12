@@ -1,22 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using MyChess.Hashing;
+using MyChess.Hashing.PositionHistory;
 using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChess.Models.Pieces;
 using MyChess.Rules;
 using MyChess.Rules.SpecialRules;
-using MyChess.Services;
+using MyChess.Services.Fen;
 using MyChess.Services.MoveExecution;
 
 namespace MyChess.Core;
 
 public class ChessGame
 {
-    private readonly ChessBoard _board = new();
-    private readonly BoardState _state = new();
+    public readonly ChessBoard Board = new();
+    public readonly BoardState State = new();
     private readonly MoveStrategyFactory _strategyFactory = new();
     private readonly MoveExecutor _moveExecutor;
+    private readonly RepetitionTable _repetitionTable = new();
+    private ulong _currentZobristHash;
 
     public int Ply;
 
@@ -24,124 +25,75 @@ public class ChessGame
     {
         _moveExecutor = new MoveExecutor(_strategyFactory);
         InitializeBoard();
+        UpdateZobristHash();
     }
 
     public ChessGame(string fen)
     {
         _moveExecutor = new MoveExecutor(_strategyFactory);
         InitializeFromFen(fen);
+        UpdateZobristHash();
     }
 
     public void MakeMove(ChessMove move)
     {
         Ply++;
-        _moveExecutor.ExecuteMove(move, _board, _state);
+        _moveExecutor.ExecuteMove(move, Board, State);
+        
+        UpdateZobristHash();
+        _repetitionTable.AddPosition(_currentZobristHash);
     }
 
     public void UndoLastMove()
     {
         Ply--;
-        _moveExecutor.UndoMove(_board, _state);
-    }
-
-    public IEnumerable<ChessMove> GetValidMoves(int cell)
-    {
-        var piece = _board.GetPiece(cell);
-        if (piece is null || piece.Color != CurrentPlayer) yield break;
-
-        var friendlyPieces = CurrentPlayer == ChessColor.White ? 
-            _board.Occupancies[0] : _board.Occupancies[1];
-        var enemyPieces = CurrentPlayer == ChessColor.White ? 
-            _board.Occupancies[1] : _board.Occupancies[0];
-
-        var potentialMoves = piece
-            .GetMoveGenerator()
-            .GetPossibleMoves(cell, enemyPieces, friendlyPieces)
-            .Where(move => GameRules.IsValidMove(move, _board, _state));
-
-        foreach (var move in potentialMoves)
-        {
-            yield return move;
-        }
-
-        if (piece is King)
-        {
-            var moves = CastlingRule
-                .GetCastlingMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
-            
-            foreach (var move in moves)
-            {
-                yield return move;
-            }
-        }
-        
-        if (piece is Pawn)
-        {
-            var moves = EnPassantRule
-                .GetEnPassantMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
-            
-            foreach (var move in moves)
-            {
-                yield return move;
-            }
-            
-            moves = PromotionRule
-                .GetPromotionMoves(cell, _board, _state)
-                .Where(move => GameRules.IsValidMove(move, _board, _state));
-            
-            foreach (var move in moves)
-            {
-                yield return move;
-            } 
-        }
+        _repetitionTable.RemoveLastPosition();
+        _moveExecutor.UndoMove(Board, State);
+        UpdateZobristHash();
     }
 
     public void SwapPlayers()
     {
-        _state.ChangeColor();
+        State.ChangeColor();
     }
 
     public int? GetEnPassantTarget()
     {
-        return _state.EnPassantTarget;
+        return State.EnPassantTarget;
     }
-    
+
     public void SetEnPassantTarget(int? cell)
     {
-        _state.EnPassantTarget = cell;
+        State.EnPassantTarget = cell;
     }
 
-    public ChessBoard GetClonedBoard()
+    public ChessColor CurrentPlayer => State.CurrentMoveColor;
+
+    public IChessPiece? GetPiece(int cell) => Board.GetPiece(cell);
+
+    public bool IsCheckmate => GameRules.IsCheckmate(State.CurrentMoveColor, Board, State);
+    public bool IsStalemate => GameRules.IsStalemate(State.CurrentMoveColor, Board, State);
+    public bool IsDrawByRepetition => _repetitionTable.IsDrawByRepetition(_currentZobristHash);
+    
+    private void UpdateZobristHash()
     {
-        return _board.Clone();
+        _currentZobristHash = ZobristHasher.CalculateInitialHash(Board, State);
     }
-
-    public ChessColor CurrentPlayer => _state.CurrentMoveColor;
-
-    public IChessPiece? GetPiece(int cell) => _board.GetPiece(cell);
-
-    public bool IsCheckmate => GameRules.IsCheckmate(_state.CurrentMoveColor, _board, _state);
-    public bool IsStalemate => GameRules.IsStalemate(_state.CurrentMoveColor, _board, _state);
-    public bool IsOver => IsCheckmate || IsStalemate;
 
     public bool IsKingInCheck()
     {
-        return GameRules.IsSquareUnderAttack(_board.FindKing(_state.CurrentMoveColor), _state.CurrentMoveColor, _board);
+        return GameRules.IsSquareUnderAttack(Board.FindKing(State.CurrentMoveColor), State.CurrentMoveColor, Board);
     }
 
-    private IEnumerable<ChessMove> GetAllRawMoves()
+    private IEnumerable<ChessMove> GetAllPotentialMoves()
     {
         for (var i = 0; i < 64; i++)
         {
-            var piece = _board.GetPiece(i);
+            var piece = Board.GetPiece(i);
             if (piece is null || piece.Color != CurrentPlayer) continue;
 
-            var friendlyPieces = CurrentPlayer == ChessColor.White ? 
-                _board.Occupancies[0] : _board.Occupancies[1];
-            var enemyPieces = CurrentPlayer == ChessColor.White ? 
-                _board.Occupancies[1] : _board.Occupancies[0];
+            var friendlyPieces = CurrentPlayer == ChessColor.White ? Board.Occupancies[0] : Board.Occupancies[1];
+            var enemyPieces = CurrentPlayer == ChessColor.White ? Board.Occupancies[1] : Board.Occupancies[0];
 
             var potentialMoves = piece
                 .GetMoveGenerator()
@@ -154,20 +106,20 @@ public class ChessGame
 
             if (piece is King)
             {
-                foreach (var move in CastlingRule.GetCastlingMoves(i, _board, _state))
+                foreach (var move in CastlingRule.GetCastlingMoves(i, Board, State))
                 {
                     yield return move;
                 }
             }
-            
+
             if (piece is Pawn)
             {
-                foreach (var move in EnPassantRule.GetEnPassantMoves(i, _board, _state))
+                foreach (var move in EnPassantRule.GetEnPassantMoves(i, Board, State))
                 {
                     yield return move;
                 }
-                
-                foreach (var move in PromotionRule.GetPromotionMoves(i, _board, _state))
+
+                foreach (var move in PromotionRule.GetPromotionMoves(i, Board, State))
                 {
                     yield return move;
                 }
@@ -177,12 +129,12 @@ public class ChessGame
 
     public IEnumerable<ChessMove> GetAllPossibleMoves()
     {
-        return GetAllRawMoves().Where(move => GameRules.IsValidMove(move, _board, _state));
+        return GetAllPotentialMoves().Where(move => GameRules.IsValidMove(move, Board, State));
     }
 
     private void InitializeBoard()
     {
-        _board.BitBoards =
+        Board.BitBoards =
         [
             new BitBoard(0x00FF000000000000),
             new BitBoard(0x4200000000000000),
@@ -197,9 +149,9 @@ public class ChessGame
             new BitBoard(0x0000000000000008),
             new BitBoard(0x0000000000000010)
         ];
-        
-        _board.UpdateWhiteOccupancies();
-        _board.UpdateBlackOccupancies();
+
+        Board.UpdateWhiteOccupancies();
+        Board.UpdateBlackOccupancies();
     }
 
     private void InitializeFromFen(string fen)
@@ -207,165 +159,81 @@ public class ChessGame
         var fenParts = fen.Split(' ');
         if (fenParts.Length < 4) throw new ArgumentException("Invalid FEN string");
 
-        SetupBoardFromFen(fenParts[0]);
-        SetupCurrentPlayerFromFen(fenParts[1]);
-        SetupCastlingRightsFromFen(fenParts[2]);
-        SetupEnPassantFromFen(fenParts[3]);
+        FenParser.SetupBoardFromFen(Board, fenParts[0]);
+        FenParser.SetupCurrentPlayerFromFen(State, fenParts[1]);
+        FenParser.SetupCastlingRightsFromFen(State, fenParts[2]);
+        FenParser.SetupEnPassantFromFen(State, fenParts[3]);
     }
 
-    private void SetupBoardFromFen(string boardFen)
-    {
-        var ranks = boardFen.Split('/');
-        if (ranks.Length != 8) throw new ArgumentException("Invalid board position in FEN");
-
-        for (var rankIndex = 0; rankIndex < 8; rankIndex++)
-        {
-            var rank = ranks[rankIndex];
-            var squareIndex = rankIndex * 8;
-
-            foreach (var chr in rank)
-            {
-                if (char.IsDigit(chr))
-                {
-                    var emptySquares = chr - '0';
-                    squareIndex += emptySquares;
-                }
-                else
-                {
-                    var piece = GetPieceFromFenChar(chr);
-                    _board.SetPiece(squareIndex, piece);
-                    squareIndex++;
-                }
-            }
-        }
-    }
-
-    private IChessPiece GetPieceFromFenChar(char c)
-    {
-        return c switch
-        {
-            'P' => Pawn.White,
-            'N' => Knight.White,
-            'B' => Bishop.White,
-            'R' => Rook.White,
-            'Q' => Queen.White,
-            'K' => King.White,
-            'p' => Pawn.Black,
-            'n' => Knight.Black,
-            'b' => Bishop.Black,
-            'r' => Rook.Black,
-            'q' => Queen.Black,
-            'k' => King.Black,
-            _ => throw new ArgumentException($"Invalid FEN character: {c}")
-        };
-    }
-
-    private void SetupCurrentPlayerFromFen(string activeColor)
-    {
-        _state.CurrentMoveColor = activeColor.ToLower() == "w" ? ChessColor.White : ChessColor.Black;
-    }
-
-    private void SetupCastlingRightsFromFen(string castlingRights)
-    {
-        if (!castlingRights.Contains('K')) _state.DisableCastling(CastlingRights.WhiteKingSide);
-        if (!castlingRights.Contains('Q')) _state.DisableCastling(CastlingRights.WhiteQueenSide);
-        if (!castlingRights.Contains('k')) _state.DisableCastling(CastlingRights.BlackKingSide);
-        if (!castlingRights.Contains('q')) _state.DisableCastling(CastlingRights.BlackQueenSide);
-    }
-
-    private void SetupEnPassantFromFen(string enPassantSquare)
-    { 
-        _state.EnPassantTarget = enPassantSquare == "-" ? null : SquareNotationToIndex(enPassantSquare);
-    }
-    
-    private int? SquareNotationToIndex(string square)
-    {
-        if (square.Length != 2)
-            return null;
-
-        var fileChar = square[0];
-        var rankChar = square[1];
-
-        if (fileChar < 'a' || fileChar > 'h' || rankChar < '1' || rankChar > '8')
-            return null;
-
-        var file = fileChar - 'a';
-        var rank = 8 - (rankChar - '0');
-        return rank * 8 + file;
-    }
-
-    public ChessMove CreateMoveFromString(string moveString)
-    {
-        return MoveFromStringFactory.CreateMoveFromString(_board, moveString);
-    }
-    
     public void PrintBoard()
-{
-    Console.WriteLine("   a b c d e f g h");
-    Console.WriteLine("   ________________");
-    
-    for (var rank = 0; rank < 8; rank++)
     {
-        Console.Write($"{8 - rank} |");
-        for (var file = 0; file < 8; file++)
+        Console.WriteLine("   a b c d e f g h");
+        Console.WriteLine("   ________________");
+
+        for (var rank = 0; rank < 8; rank++)
         {
-            var square = rank * 8 + file;
-            var piece = GetPiece(square);
-            
-            var symbol = piece switch
+            Console.Write($"{8 - rank} |");
+            for (var file = 0; file < 8; file++)
             {
-                Pawn { Color: ChessColor.White } => "P",
-                Knight { Color: ChessColor.White } => "N",
-                Bishop { Color: ChessColor.White } => "B",
-                Rook { Color: ChessColor.White } => "R",
-                Queen { Color: ChessColor.White } => "Q",
-                King { Color: ChessColor.White } => "K",
-                Pawn { Color: ChessColor.Black } => "p",
-                Knight { Color: ChessColor.Black } => "n",
-                Bishop { Color: ChessColor.Black } => "b",
-                Rook { Color: ChessColor.Black } => "r",
-                Queen { Color: ChessColor.Black } => "q",
-                King { Color: ChessColor.Black } => "k",
-                _ => "."
-            };
-            
-            Console.Write($"{symbol} ");
+                var square = rank * 8 + file;
+                var piece = GetPiece(square);
+
+                var symbol = piece switch
+                {
+                    Pawn { Color: ChessColor.White } => "P",
+                    Knight { Color: ChessColor.White } => "N",
+                    Bishop { Color: ChessColor.White } => "B",
+                    Rook { Color: ChessColor.White } => "R",
+                    Queen { Color: ChessColor.White } => "Q",
+                    King { Color: ChessColor.White } => "K",
+                    Pawn { Color: ChessColor.Black } => "p",
+                    Knight { Color: ChessColor.Black } => "n",
+                    Bishop { Color: ChessColor.Black } => "b",
+                    Rook { Color: ChessColor.Black } => "r",
+                    Queen { Color: ChessColor.Black } => "q",
+                    King { Color: ChessColor.Black } => "k",
+                    _ => "."
+                };
+
+                Console.Write($"{symbol} ");
+            }
+
+            Console.WriteLine($"| {8 - rank}");
         }
-        Console.WriteLine($"| {8 - rank}");
-    }
-    
-    Console.WriteLine("   ----------------");
-    Console.WriteLine("   a b c d e f g h");
-    Console.WriteLine();
 
-    Console.WriteLine($"Current player: {CurrentPlayer}");
-    
-    var castlingRights = _state.CastlingRights;
-    Console.Write("Castling rights: ");
-    
-    if (castlingRights.HasFlag(CastlingRights.WhiteKingSide)) Console.Write("K");
-    if (castlingRights.HasFlag(CastlingRights.WhiteQueenSide)) Console.Write("Q");
-    if (castlingRights.HasFlag(CastlingRights.BlackKingSide)) Console.Write("k");
-    if (castlingRights.HasFlag(CastlingRights.BlackQueenSide)) Console.Write("q");
-    
-    if (castlingRights == 0) Console.Write("None");
-    Console.WriteLine();
+        Console.WriteLine("   ----------------");
+        Console.WriteLine("   a b c d e f g h");
+        Console.WriteLine();
 
-    var enPassantTarget = _state.EnPassantTarget;
-    if (enPassantTarget.HasValue)
-    {
-        var file = enPassantTarget.Value % 8;
-        var rank = 7 - (enPassantTarget.Value / 8);
-        var fileChar = (char)('a' + file);
-        var rankChar = (char)('1' + rank);
-        Console.WriteLine($"En passant target: {fileChar}{rankChar}");
-    }
-    else
-    {
-        Console.WriteLine("En passant target: None");
-    }
+        Console.WriteLine($"Current player: {CurrentPlayer}");
 
-    if (IsCheckmate) Console.WriteLine("CHECKMATE!");
-    else if (IsStalemate) Console.WriteLine("STALEMATE!");
-}
+        var castlingRights = State.CastlingRights;
+        Console.Write("Castling rights: ");
+
+        if (castlingRights.HasFlag(CastlingRights.WhiteKingSide)) Console.Write("K");
+        if (castlingRights.HasFlag(CastlingRights.WhiteQueenSide)) Console.Write("Q");
+        if (castlingRights.HasFlag(CastlingRights.BlackKingSide)) Console.Write("k");
+        if (castlingRights.HasFlag(CastlingRights.BlackQueenSide)) Console.Write("q");
+
+        if (castlingRights == 0) Console.Write("None");
+        Console.WriteLine();
+
+        var enPassantTarget = State.EnPassantTarget;
+        if (enPassantTarget.HasValue)
+        {
+            var file = enPassantTarget.Value % 8;
+            var rank = 7 - (enPassantTarget.Value / 8);
+            var fileChar = (char)('a' + file);
+            var rankChar = (char)('1' + rank);
+            Console.WriteLine($"En passant target: {fileChar}{rankChar}");
+        }
+        else
+        {
+            Console.WriteLine("En passant target: None");
+        }
+
+        if (IsCheckmate) Console.WriteLine("CHECKMATE!");
+        else if (IsStalemate) Console.WriteLine("STALEMATE!");
+        else if (IsDrawByRepetition) Console.WriteLine("DRAW BY THREEFOLD REPETITION!");
+    }
 }

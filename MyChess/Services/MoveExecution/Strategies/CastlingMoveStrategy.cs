@@ -1,4 +1,3 @@
-using System.Linq;
 using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.MoveHistoryItems;

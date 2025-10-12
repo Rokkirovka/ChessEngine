@@ -1,5 +1,3 @@
-using System;
-
 namespace MyChess.Models;
 
 [Flags]

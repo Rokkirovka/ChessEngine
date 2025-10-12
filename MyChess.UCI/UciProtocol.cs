@@ -1,7 +1,6 @@
-﻿using System;
-using System.Linq;
-using MyChess.Core;
+﻿using MyChess.Core;
 using MyChess.Models.Moves;
+using MyChess.Services.Fen;
 using MyChessEngine.Core;
 using MyChessEngine.Models;
 
@@ -11,7 +10,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 5;
+    private const int DefaultDepth = 6;
 
     private static void Main()
     {
@@ -85,7 +84,7 @@ internal abstract class UciProtocol
         if (index >= tokens.Length || tokens[index] != "moves") return;
         for (var i = index + 1; i < tokens.Length; i++)
         {
-            var move = _game.CreateMoveFromString(tokens[i]);
+            var move = FenParser.CreateMoveFromString(_game.Board, tokens[i]);
             _game.MakeMove(move);
         }
     }

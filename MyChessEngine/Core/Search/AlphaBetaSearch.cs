@@ -1,19 +1,22 @@
-using System.Linq;
 using MyChess.Core;
+using MyChess.Hashing;
 using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChessEngine.Core.Evaluation;
 using MyChessEngine.Models;
+using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
 public static class AlphaBetaSearch
 {
+    private static readonly TranspositionTable TranspositionTable = new();
     public static EngineResult Search(ChessGame game, SearchParameters searchParameters, Evaluator evaluator)
     {
         var pvArray = new ChessMove[searchParameters.Depth * (searchParameters.Depth + 1) / 2];
         var nodesVisited = 0;
         ChessMove? bestMove = null;
+        TranspositionTable.IncrementAge();
 
         var moves =
             game.GetAllPossibleMoves()
@@ -59,20 +62,52 @@ public static class AlphaBetaSearch
         int currentDepth,
         ref int nodesVisited, int alpha, int beta, int color)
     {
+        if (currentDepth == 0)
+        {
+            if (!searchParameters.UseQuiescenceSearch) return Evaluator.EvaluatePosition(game.Board) * color;
+            return QuiescenceSearch.Search(game, currentDepth, evaluator, ref nodesVisited, alpha, beta, color);
+        }
+        
+        var hash = ZobristHasher.CalculateInitialHash(game.Board, game.State);
+
+        if (searchParameters.UseTranspositionTable && TranspositionTable.TryGet(hash, out var entry))
+        {
+            if (entry.Depth >= currentDepth)
+            {
+                switch (entry.NodeType)
+                {
+                    case NodeType.Exact: return entry.Score;
+                    case NodeType.LowerBound:
+                        if (entry.Score > alpha)
+                        {
+                            var row = searchParameters.Depth - currentDepth;
+                            var moveIndex = row * (2 * searchParameters.Depth - row + 1) / 2;
+                            pvArray[moveIndex] = entry.BestMove!;
+                            for (var i = moveIndex + 1; i < moveIndex + searchParameters.Depth - row; i++)
+                                pvArray[i] = pvArray[i + searchParameters.Depth - row - 1];
+                            alpha = entry.Score;
+                        }
+                        break;
+                    case NodeType.UpperBound:
+                        beta = Math.Min(beta, entry.Score);
+                        break;
+                    default:
+                        throw new Exception();
+                }
+
+                if (alpha >= beta) return entry.Score;
+            }
+        }
+        
         if (game.IsCheckmate)
         {
             nodesVisited++;
             return -100000 - currentDepth;
         }
-        if (game.IsStalemate)
+        if (game.IsStalemate || game.IsDrawByRepetition)
         {
             nodesVisited++;
             return 0;
-        }
-        if (currentDepth == 0)
-        {
-            if (!searchParameters.UseQuiescenceSearch) return Evaluator.EvaluatePosition(game.GetClonedBoard()) * color;
-            return QuiescenceSearch.Search(game, currentDepth, evaluator, ref nodesVisited, alpha, beta, color);
         }
 
         if (currentDepth > 2 && !game.IsKingInCheck() && searchParameters.UseNullMovePruning)
@@ -88,6 +123,9 @@ public static class AlphaBetaSearch
 
         var moves = game.GetAllPossibleMoves()
             .OrderByDescending(move => evaluator.EvaluateMove(game, move));
+        
+        ChessMove? bestMoveInNode = null;
+        var nodeType = NodeType.UpperBound;
 
         foreach (var move in moves)
         {
@@ -98,6 +136,8 @@ public static class AlphaBetaSearch
             if (score > alpha)
             {
                 alpha = score;
+                bestMoveInNode = move;
+                nodeType = NodeType.Exact;
 
                 var row = searchParameters.Depth - currentDepth;
                 var moveIndex = row * (2 * searchParameters.Depth - row + 1) / 2;
@@ -114,10 +154,14 @@ public static class AlphaBetaSearch
                     if (searchParameters.UseHistoryTable)
                         evaluator.UpdateHistoryTable(game.GetPiece(move.From)!.Index, move.To, currentDepth);
                 }
-
+                
+                nodeType = NodeType.LowerBound;
                 break;
             }
         }
+        
+        if (searchParameters.UseTranspositionTable)
+            TranspositionTable.Store(hash, alpha, currentDepth, bestMoveInNode, nodeType);
 
         return alpha;
     }
