@@ -1,4 +1,5 @@
 ﻿using MyChess.Core;
+using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChess.Services.Fen;
 using MyChessEngine.Core;
@@ -10,7 +11,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 6;
+    private const int DefaultDepth = 8;
 
     private static void Main()
     {
@@ -92,33 +93,71 @@ internal abstract class UciProtocol
     private static void HandleGo(string[] tokens)
     {
         var depth = DefaultDepth;
+        int? moveTime = null;
+        int? whiteTime = null;
+        int? blackTime = null;
+        int? whiteIncrement = null;
+        int? blackIncrement = null;
+
         for (var i = 1; i < tokens.Length; i++)
         {
-            if (tokens[i] == "depth" && i + 1 < tokens.Length)
+            switch (tokens[i])
             {
-                depth = int.Parse(tokens[i + 1]);
+                case "depth" when i + 1 < tokens.Length:
+                    depth = int.Parse(tokens[i + 1]);
+                    break;
+                case "movetime" when i + 1 < tokens.Length:
+                    moveTime = int.Parse(tokens[i + 1]);
+                    break;
+                case "wtime" when i + 1 < tokens.Length:
+                    whiteTime = int.Parse(tokens[i + 1]);
+                    break;
+                case "btime" when i + 1 < tokens.Length:
+                    blackTime = int.Parse(tokens[i + 1]);
+                    break;
+                case "winc" when i + 1 < tokens.Length:
+                    whiteIncrement = int.Parse(tokens[i + 1]);
+                    break;
+                case "binc" when i + 1 < tokens.Length:
+                    blackIncrement = int.Parse(tokens[i + 1]);
+                    break;
             }
         }
 
         _game ??= new ChessGame();
-        
+
+        var timeForMove = CalculateTimeForMove(_game.CurrentPlayer,
+            moveTime, whiteTime, blackTime, whiteIncrement, blackIncrement);
+
         EngineResult? result = null;
+        var searchStarted = DateTime.Now;
 
         for (var currentDepth = 1; currentDepth <= depth; currentDepth++)
         {
+            var timeElapsed = (DateTime.Now - searchStarted).TotalMilliseconds;
+
+            if (timeElapsed > timeForMove * 0.9) break;
+
             result = _engine.FindBestMove(_game, new SearchParameters { Depth = currentDepth });
 
-            Console.Write($"info " +
-                          $"score cp {result.Score} " +
-                          $"depth {currentDepth} " +
-                          $"nodes {result.NodesVisited} " +
-                          $"pv " +
-                          string.Join(" ", result.PrincipalVariation
-                              .TakeWhile(move => move is not null)
-                              .Select(move => move.ToString())) + "\n");
+            if (timeForMove > 200)
+            {
+                Console.Write($"info " +
+                              $"score cp {result.Score} " +
+                              $"depth {currentDepth} " +
+                              $"nodes {result.NodesVisited} " +
+                              $"time {(int)timeElapsed} " +
+                              $"pv " +
+                              string.Join(" ", result.PrincipalVariation
+                                  .TakeWhile(move => move is not null)
+                                  .Select(move => move.ToString())) + "\n");
+            }
+
+            timeElapsed = (DateTime.Now - searchStarted).TotalMilliseconds;
+            if (timeElapsed > timeForMove * 0.8) break;
         }
 
-        if (result!.BestMove is not null)
+        if (result?.BestMove is not null)
         {
             var uciMove = ConvertChessMoveToUci(result.BestMove);
             Console.WriteLine($"bestmove {uciMove}");
@@ -127,6 +166,27 @@ internal abstract class UciProtocol
         {
             Console.WriteLine("bestmove 0000");
         }
+    }
+    
+    private static int CalculateTimeForMove(ChessColor currentColor, 
+        int? moveTime, int? whiteTime, int? blackTime, 
+        int? whiteIncrement, int? blackIncrement)
+    {
+        if (moveTime.HasValue) return moveTime.Value;
+
+        var timeLeft = currentColor == ChessColor.White ? 
+            whiteTime ?? 60000 : blackTime ?? 60000;
+        var increment = currentColor == ChessColor.White ? 
+            whiteIncrement ?? 0 : blackIncrement ?? 0;
+    
+        var baseTime = timeLeft / 20;
+        var bonusTime = increment / 2;
+    
+        var calculatedTime = baseTime + bonusTime;
+    
+        calculatedTime = Math.Min(calculatedTime, (int)(timeLeft * 0.8));
+    
+        return calculatedTime;
     }
 
     private static string ConvertChessMoveToUci(ChessMove move)
