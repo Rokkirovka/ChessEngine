@@ -11,7 +11,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 8;
+    private const int DefaultDepth = 6;
 
     private static void Main()
     {
@@ -132,30 +132,7 @@ internal abstract class UciProtocol
         EngineResult? result = null;
         var searchStarted = DateTime.Now;
 
-        for (var currentDepth = 1; currentDepth <= depth; currentDepth++)
-        {
-            var timeElapsed = (DateTime.Now - searchStarted).TotalMilliseconds;
-
-            if (timeElapsed > timeForMove * 0.9) break;
-
-            result = _engine.FindBestMove(_game, new SearchParameters { Depth = currentDepth });
-
-            if (timeForMove > 200)
-            {
-                Console.Write($"info " +
-                              $"score cp {result.Score} " +
-                              $"depth {currentDepth} " +
-                              $"nodes {result.NodesVisited} " +
-                              $"time {(int)timeElapsed} " +
-                              $"pv " +
-                              string.Join(" ", result.PrincipalVariation
-                                  .TakeWhile(move => move is not null)
-                                  .Select(move => move.ToString())) + "\n");
-            }
-
-            timeElapsed = (DateTime.Now - searchStarted).TotalMilliseconds;
-            if (timeElapsed > timeForMove * 0.8) break;
-        }
+        result = _engine.FindBestMove(_game, new SearchParameters {Depth = depth});
 
         if (result?.BestMove is not null)
         {

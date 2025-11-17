@@ -8,7 +8,8 @@ namespace MyChessEngine.Core.Search;
 public static class QuiescenceSearch
 {
     private static readonly TranspositionTable QuiescenceTable = new(1 << 16, 2); 
-    public static int Search(ChessGame game, int depth, Evaluator evaluator, ref int nodesVisited, int alpha, int beta, int color)
+    
+    public static int Search(ChessGame game, int depth, Evaluator evaluator, SearchContext context, int alpha, int beta, int color)
     {
         var hash = ZobristHasher.CalculateInitialHash(game.Board, game.State);
         
@@ -29,9 +30,11 @@ public static class QuiescenceSearch
             if (alpha >= beta)
                 return entry.Score;
         }
+        
         if (game.IsCheckmate) return -100000 - depth;
         if (game.IsStalemate || game.IsDrawByRepetition) return 0;
-        nodesVisited++;
+        
+        context.NodesVisited++;
         var evaluation = Evaluator.EvaluatePosition(game.Board) * color;
 
         if (evaluation >= beta) return beta;
@@ -44,7 +47,7 @@ public static class QuiescenceSearch
         foreach (var move in moves)
         {
             game.MakeMove(move);
-            var score = -Search(game, depth, evaluator, ref nodesVisited, -beta, -alpha, -color);
+            var score = -Search(game, depth, evaluator, context, -beta, -alpha, -color);
             game.UndoLastMove();
 
             if (score > alpha) alpha = score;

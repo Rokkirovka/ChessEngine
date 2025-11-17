@@ -9,7 +9,7 @@ public class RepetitionTable
 
     public void AddPosition(ulong hash)
     {
-        if (_positionCounts.TryGetValue(hash, out int value))
+        if (_positionCounts.TryGetValue(hash, out var value))
             _positionCounts[hash] = ++value;
         else
             _positionCounts[hash] = 1;
