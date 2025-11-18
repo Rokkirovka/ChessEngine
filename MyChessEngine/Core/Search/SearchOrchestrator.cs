@@ -8,13 +8,11 @@ namespace MyChessEngine.Core.Search;
 
 public class SearchOrchestrator(Evaluator evaluator)
 {
-    private readonly TranspositionService _transpositionService = new();
     private readonly MoveOrderingService _moveOrderingService = new(evaluator);
 
     public EngineResult FindBestMove(ChessGame game, SearchParameters searchParameters)
     {
-        var context = new SearchContext(game, searchParameters, evaluator,
-            _transpositionService, _moveOrderingService);
+        var context = new SearchContext(game, searchParameters, evaluator, _moveOrderingService);
         TranspositionService.IncrementAge();
 
         var moves = _moveOrderingService.OrderMoves(game, game.GetAllPossibleMoves());
@@ -37,7 +35,7 @@ public class SearchOrchestrator(Evaluator evaluator)
                 context.PvTableManager.UpdatePvLine(move, 0, searchParameters.Depth);
             }
 
-            _moveOrderingService.UpdateHeuristics(game, move, searchParameters.Depth, game.Ply);
+            _moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
         }
 
         return new EngineResult(

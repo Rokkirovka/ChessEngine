@@ -1,4 +1,5 @@
-﻿using MyChess.Core;
+﻿using System.Diagnostics;
+using MyChess.Core;
 using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChess.Services.Fen;
@@ -11,7 +12,7 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 6;
+    private const int DefaultDepth = 7;
 
     private static void Main()
     {
@@ -90,60 +91,70 @@ internal abstract class UciProtocol
         }
     }
 
-    private static void HandleGo(string[] tokens)
+private static void HandleGo(string[] tokens)
+{
+    var depth = DefaultDepth;
+    int? moveTime = null;
+    int? whiteTime = null;
+    int? blackTime = null;
+    int? whiteIncrement = null;
+    int? blackIncrement = null;
+
+    for (var i = 1; i < tokens.Length; i++)
     {
-        var depth = DefaultDepth;
-        int? moveTime = null;
-        int? whiteTime = null;
-        int? blackTime = null;
-        int? whiteIncrement = null;
-        int? blackIncrement = null;
-
-        for (var i = 1; i < tokens.Length; i++)
+        switch (tokens[i])
         {
-            switch (tokens[i])
-            {
-                case "depth" when i + 1 < tokens.Length:
-                    depth = int.Parse(tokens[i + 1]);
-                    break;
-                case "movetime" when i + 1 < tokens.Length:
-                    moveTime = int.Parse(tokens[i + 1]);
-                    break;
-                case "wtime" when i + 1 < tokens.Length:
-                    whiteTime = int.Parse(tokens[i + 1]);
-                    break;
-                case "btime" when i + 1 < tokens.Length:
-                    blackTime = int.Parse(tokens[i + 1]);
-                    break;
-                case "winc" when i + 1 < tokens.Length:
-                    whiteIncrement = int.Parse(tokens[i + 1]);
-                    break;
-                case "binc" when i + 1 < tokens.Length:
-                    blackIncrement = int.Parse(tokens[i + 1]);
-                    break;
-            }
-        }
-
-        _game ??= new ChessGame();
-
-        var timeForMove = CalculateTimeForMove(_game.CurrentPlayer,
-            moveTime, whiteTime, blackTime, whiteIncrement, blackIncrement);
-
-        EngineResult? result = null;
-        var searchStarted = DateTime.Now;
-
-        result = _engine.FindBestMove(_game, new SearchParameters {Depth = depth});
-
-        if (result?.BestMove is not null)
-        {
-            var uciMove = ConvertChessMoveToUci(result.BestMove);
-            Console.WriteLine($"bestmove {uciMove}");
-        }
-        else
-        {
-            Console.WriteLine("bestmove 0000");
+            case "depth" when i + 1 < tokens.Length:
+                depth = int.Parse(tokens[i + 1]);
+                break;
+            case "movetime" when i + 1 < tokens.Length:
+                moveTime = int.Parse(tokens[i + 1]);
+                break;
+            case "wtime" when i + 1 < tokens.Length:
+                whiteTime = int.Parse(tokens[i + 1]);
+                break;
+            case "btime" when i + 1 < tokens.Length:
+                blackTime = int.Parse(tokens[i + 1]);
+                break;
+            case "winc" when i + 1 < tokens.Length:
+                whiteIncrement = int.Parse(tokens[i + 1]);
+                break;
+            case "binc" when i + 1 < tokens.Length:
+                blackIncrement = int.Parse(tokens[i + 1]);
+                break;
         }
     }
+
+    _game ??= new ChessGame();
+
+    CalculateTimeForMove(_game.CurrentPlayer,
+        moveTime, whiteTime, blackTime, whiteIncrement, blackIncrement);
+    
+    var stopwatch = Stopwatch.StartNew();
+    var result = _engine.FindBestMove(_game, new SearchParameters {Depth = depth, UseTranspositionTable = false});
+    stopwatch.Stop();
+    Console.WriteLine($"Время выполнения: {stopwatch.ElapsedMilliseconds} ms");
+
+    if (result.PrincipalVariation.Length != 0)
+    {
+        var pvMoves = string.Join(" ", result.PrincipalVariation.Select(ConvertChessMoveToUci));
+        Console.WriteLine($"info depth {depth} score cp {result.Score} nodes {result.NodesVisited} pv {pvMoves}");
+    }
+    else
+    {
+        Console.WriteLine($"info depth {depth} score cp {result.Score} nodes {result.NodesVisited}");
+    }
+
+    if (result.BestMove is not null)
+    {
+        var uciMove = ConvertChessMoveToUci(result.BestMove);
+        Console.WriteLine($"bestmove {uciMove}");
+    }
+    else
+    {
+        Console.WriteLine("bestmove 0000");
+    }
+}
     
     private static int CalculateTimeForMove(ChessColor currentColor, 
         int? moveTime, int? whiteTime, int? blackTime, 

@@ -1,6 +1,5 @@
 using MyChess.Hashing;
 using MyChess.Models.Moves;
-using MyChessEngine.Core.Evaluation;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
@@ -15,25 +14,15 @@ public static class AlphaBetaSearch
             return TerminalNodeChecker.AdjustScoreForDepth(terminalScore, currentDepth);
 
         if (currentDepth == 0)
-        {
-            if (!context.Parameters.UseQuiescenceSearch) 
-                return Evaluator.EvaluatePosition(context.Game.Board) * color;
-                
-            return QuiescenceSearch.Search(context.Game, currentDepth, context.Evaluator, 
-                context, alpha, beta, color); 
-        }
+            return QuiescenceSearch.Search(context, currentDepth, context.Evaluator, alpha, beta, color);
 
         var hash = ZobristHasher.CalculateInitialHash(context.Game.Board, context.Game.State);
-        if (context.Parameters.UseTranspositionTable && 
-            TranspositionService.TryGetBestMove(hash, currentDepth, out _, out var ttScore, out var nodeType))
-        {
+        if (TranspositionService.TryGetBestMove(context, hash, currentDepth, alpha, beta, out var ttScore, out var nodeType))
             return HandleTranspositionResult(ttScore, nodeType, alpha, beta);
-        }
 
-        if (NullMovePruning.TryNullMovePruning(context, currentDepth, beta, color, out var nullMoveScore))
-            return nullMoveScore;
-
-        return SearchMoves(context, currentDepth, alpha, beta, color, hash);
+        return NullMovePruning.TryNullMovePruning(context, currentDepth, beta, color, out var nullMoveScore)
+            ? nullMoveScore
+            : SearchMoves(context, currentDepth, alpha, beta, color, hash);
     }
 
     private static int HandleTranspositionResult(int score, NodeType nodeType, int alpha, int beta)
@@ -50,6 +39,7 @@ public static class AlphaBetaSearch
             default:
                 throw new ArgumentOutOfRangeException(nameof(nodeType), nodeType, null);
         }
+
         return alpha >= beta ? score : alpha;
     }
 
@@ -59,32 +49,29 @@ public static class AlphaBetaSearch
         ChessMove? bestMoveInNode = null;
         var nodeType = NodeType.UpperBound;
 
+        var moveIndex = 0;
         foreach (var move in moves)
         {
-            context.Game.MakeMove(move);
-            var score = -SearchInternal(context, currentDepth - 1, -beta, -alpha, -color);
-            context.Game.UndoLastMove();
+            var score = LateMoveReduction.SearchWithLmr(context, move, currentDepth, alpha, beta, color, moveIndex);
 
             if (score > alpha)
             {
                 alpha = score;
                 bestMoveInNode = move;
                 nodeType = NodeType.Exact;
-
                 context.PvTableManager.UpdatePvLine(move, currentDepth, context.Parameters.Depth);
             }
 
             if (alpha >= beta)
             {
-                context.MoveOrderingService.UpdateHeuristics(context.Game, move, currentDepth, context.Game.Ply);
+                context.MoveOrderingService.UpdateHeuristics(context, move, currentDepth);
                 nodeType = NodeType.LowerBound;
                 break;
             }
+
+            moveIndex++;
         }
-
-        if (context.Parameters.UseTranspositionTable)
-            TranspositionService.Store(hash, alpha, currentDepth, bestMoveInNode, nodeType);
-
+        TranspositionService.Store(context, hash, alpha, currentDepth, bestMoveInNode, nodeType);
         return alpha;
     }
 }

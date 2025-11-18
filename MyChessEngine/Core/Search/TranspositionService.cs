@@ -3,28 +3,33 @@ using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
-public class TranspositionService
+public static class TranspositionService
 {
     private static readonly TranspositionTable Table = new();
     
     public static void IncrementAge() => Table.IncrementAge();
     
-    public static bool TryGetBestMove(ulong hash, int currentDepth, out ChessMove? bestMove, out int score, out NodeType nodeType)
+    public static bool TryGetBestMove(SearchContext context, ulong hash, int currentDepth, int alpha, int beta, out int score, out NodeType nodeType)
     {
-        bestMove = null;
         score = 0;
         nodeType = NodeType.Exact;
-        
+        if (context.Parameters.UseTranspositionTable is false) return false;
+    
         if (!Table.TryGet(hash, out var entry)) return false;
 
         if (entry.Depth < currentDepth) return false;
-        bestMove = entry.BestMove;
         score = entry.Score;
         nodeType = entry.NodeType;
-        return true;
 
+        if (nodeType == NodeType.Exact) return true;
+        if (nodeType == NodeType.LowerBound && score >= beta) return true;  
+        if (nodeType == NodeType.UpperBound && score <= alpha) return true;
+        return false;
     }
-    
-    public static void Store(ulong hash, int score, int depth, ChessMove? bestMove, NodeType nodeType)
-        => Table.Store(hash, score, depth, bestMove, nodeType);
+
+    public static void Store(SearchContext context, ulong hash, int score, int depth, ChessMove? bestMove, NodeType nodeType)
+    {
+        if (context.Parameters.UseTranspositionTable is false) return;
+        Table.Store(hash, score, depth, bestMove, nodeType);
+    }
 }

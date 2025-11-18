@@ -9,10 +9,12 @@ public class MoveOrderingService(Evaluator evaluator)
     public IEnumerable<ChessMove> OrderMoves(ChessGame game, IEnumerable<ChessMove> moves)
         => moves.OrderByDescending(move => evaluator.EvaluateMove(game, move));
     
-    public void UpdateHeuristics(ChessGame game, ChessMove move, int depth, int ply)
+    public void UpdateHeuristics(SearchContext context, ChessMove move, int depth)
     {
-        if (game.GetPiece(move.To) is not null) return;
-        evaluator.UpdateKillerMoves(move, ply);
-        evaluator.UpdateHistoryTable(game.GetPiece(move.From)!.Index, move.To, depth);
+        if (context.Game.GetPiece(move.To) is not null) return;
+        if (context.Parameters.UseKillerMoves)
+            evaluator.UpdateKillerMoves(move, context.Game.Ply);
+        if (context.Parameters.UseHistoryTable)
+            evaluator.UpdateHistoryTable(context.Game.GetPiece(move.From)!.Index, move.To, depth);
     }
 }
