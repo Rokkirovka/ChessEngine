@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using MyChess.Core;
 using MyChess.Models;
-using MyChess.Models.Moves;
 using MyChess.Services.Fen;
 using MyChessEngine.Core;
 using MyChessEngine.Models;
@@ -131,29 +130,14 @@ private static void HandleGo(string[] tokens)
         moveTime, whiteTime, blackTime, whiteIncrement, blackIncrement);
     
     var stopwatch = Stopwatch.StartNew();
-    var result = _engine.FindBestMove(_game, new SearchParameters {Depth = depth, UseTranspositionTable = false});
+    var reporter = new UciSearchReporter();
+    _engine.FindBestMoveWithIterativeDeepening(
+        _game, 
+        new SearchParameters { Depth = depth, UseTranspositionTable = false },
+        reporter
+    );
     stopwatch.Stop();
     Console.WriteLine($"Время выполнения: {stopwatch.ElapsedMilliseconds} ms");
-
-    if (result.PrincipalVariation.Length != 0)
-    {
-        var pvMoves = string.Join(" ", result.PrincipalVariation.Select(ConvertChessMoveToUci));
-        Console.WriteLine($"info depth {depth} score cp {result.Score} nodes {result.NodesVisited} pv {pvMoves}");
-    }
-    else
-    {
-        Console.WriteLine($"info depth {depth} score cp {result.Score} nodes {result.NodesVisited}");
-    }
-
-    if (result.BestMove is not null)
-    {
-        var uciMove = ConvertChessMoveToUci(result.BestMove);
-        Console.WriteLine($"bestmove {uciMove}");
-    }
-    else
-    {
-        Console.WriteLine("bestmove 0000");
-    }
 }
     
     private static int CalculateTimeForMove(ChessColor currentColor, 
@@ -175,10 +159,5 @@ private static void HandleGo(string[] tokens)
         calculatedTime = Math.Min(calculatedTime, (int)(timeLeft * 0.8));
     
         return calculatedTime;
-    }
-
-    private static string ConvertChessMoveToUci(ChessMove move)
-    {
-        return move.ToString();
     }
 }

@@ -46,7 +46,7 @@ public class LmrBenchmark
     {
         var tempGame = new ChessGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var result = _engine.FindBestMove(tempGame, _searchParamsWithoutLmr);
             if (result.BestMove != null)
@@ -61,7 +61,7 @@ public class LmrBenchmark
     {
         var tempGame = new ChessGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var result = _engine.FindBestMove(tempGame, _searchParamsWithLmr);
             if (result.BestMove != null)

@@ -2,40 +2,33 @@ using MyChess.Models.Moves;
 
 namespace MyChessEngine.Core.Search;
 
-public class PvTableManager(int maxDepth)
+public class PvTableManager
 {
-    private readonly ChessMove?[] _pvArray = new ChessMove?[maxDepth * maxDepth];
+    private readonly ChessMove?[][] _triangularTable;
+    private readonly int _depth;
 
-    private int GetIndex(int ply, int depth)
+    public PvTableManager(int depth)
     {
-        return ply * maxDepth + depth;
+        _depth = depth;
+        _triangularTable = new ChessMove?[depth][];
+        for (var i = 0; i < depth; i++)
+        {
+            _triangularTable[i] = new ChessMove?[depth - i];
+        }
     }
 
-    public void UpdatePvLine(ChessMove bestMove, int currentDepth, int searchDepth)
+    public void UpdatePvLine(ChessMove bestMove, int ply)
     {
-        var ply = searchDepth - currentDepth;
-        
-        if (ply >= maxDepth) return;
+        _triangularTable[ply][0] = bestMove;
 
-        _pvArray[GetIndex(ply, ply)] = bestMove;
-
-        for (var nextPly = ply + 1; nextPly < searchDepth && nextPly < maxDepth; nextPly++)
+        for (var nextPly = 1; nextPly < _depth - ply; nextPly++)
         {
-            _pvArray[GetIndex(ply, nextPly)] = _pvArray[GetIndex(ply + 1, nextPly)];
+            _triangularTable[ply][nextPly] = _triangularTable[ply + 1][nextPly - 1];
         }
     }
     
-    public ChessMove[] GetPrincipalVariation(int depth)
+    public ChessMove?[] GetPrincipalVariation()
     {
-        var result = new List<ChessMove>();
-        var actualDepth = Math.Min(depth, maxDepth);
-        
-        for (var i = 0; i < actualDepth; i++)
-        {
-            var move = _pvArray[GetIndex(0, i)];
-            if (move is not null) result.Add(move);
-            else break;
-        }
-        return result.ToArray();
+        return _triangularTable[0];
     }
 }
