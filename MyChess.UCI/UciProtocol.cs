@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using MyChess.Core;
+﻿using MyChess.Core;
 using MyChess.Models;
 using MyChess.Services.Fen;
 using MyChessEngine.Core;
@@ -11,58 +10,73 @@ internal abstract class UciProtocol
 {
     private static ChessGame? _game;
     private static ChessEngine _engine = new();
-    private const int DefaultDepth = 7;
+    private static readonly UciSearchReporter Reporter = new();
+    private static readonly SearchCanceler Canceler = new();
+    private const int DefaultDepth = 10;
+    private const int MaxDepth = 32;
 
-    private static void Main()
+    private static async Task Main()
     {
-        RunUciProtocol();
+        await RunUciProtocolAsync();
     }
 
-    private static void RunUciProtocol()
+    private static async Task RunUciProtocolAsync()
     {
-        while (true)
+        while (await Console.In.ReadLineAsync() is { } input)
         {
-            var input = Console.ReadLine();
             if (string.IsNullOrEmpty(input)) continue;
 
             var tokens = input.Split(' ');
 
-            switch (tokens[0])
-            {
-                case "uci":
-                    HandleUci();
-                    break;
-
-                case "isready":
-                    Console.WriteLine("readyok");
-                    break;
-
-                case "position":
-                    HandlePosition(tokens);
-                    break;
-
-                case "go":
-                    HandleGo(tokens);
-                    break;
-
-                case "quit":
-                    return;
-
-                case "stop":
-                    break;
-
-                case "ucinewgame":
-                    _game = new ChessGame();
-                    _engine = new ChessEngine();
-                    break;
-            }
+            var shouldExit = await ProcessCommandAsync(tokens);
+            if (shouldExit) break;
         }
+    }
+
+    private static async Task<bool> ProcessCommandAsync(string[] tokens)
+    {
+        switch (tokens[0])
+        {
+            case "uci":
+                HandleUci();
+                break;
+
+            case "isready":
+                Console.WriteLine("readyok");
+                break;
+
+            case "position":
+                HandlePosition(tokens);
+                break;
+
+            case "go":
+                Canceler.Reset();
+                _ = Task.Run(() => HandleGo(tokens));
+                break;
+
+            case "quit":
+                Canceler.StopImmediately();
+                await Task.Delay(50);
+                return true;
+
+            case "stop":
+                Canceler.StopImmediately();
+                break;
+
+            case "ucinewgame":
+                _game = new ChessGame();
+                _engine = new ChessEngine();
+                break;
+        }
+
+        return false;
     }
 
     private static void HandleUci()
     {
         Console.WriteLine("id name Rokk");
         Console.WriteLine("id author Hevdanin");
+        
         Console.WriteLine("uciok");
     }
 
@@ -90,7 +104,7 @@ internal abstract class UciProtocol
         }
     }
 
-private static void HandleGo(string[] tokens)
+    private static void HandleGo(string[] tokens)
 {
     var depth = DefaultDepth;
     int? moveTime = null;
@@ -98,6 +112,7 @@ private static void HandleGo(string[] tokens)
     int? blackTime = null;
     int? whiteIncrement = null;
     int? blackIncrement = null;
+    var depthSpecified = false;
 
     for (var i = 1; i < tokens.Length; i++)
     {
@@ -105,6 +120,7 @@ private static void HandleGo(string[] tokens)
         {
             case "depth" when i + 1 < tokens.Length:
                 depth = int.Parse(tokens[i + 1]);
+                depthSpecified = true;
                 break;
             case "movetime" when i + 1 < tokens.Length:
                 moveTime = int.Parse(tokens[i + 1]);
@@ -126,38 +142,35 @@ private static void HandleGo(string[] tokens)
 
     _game ??= new ChessGame();
 
-    CalculateTimeForMove(_game.CurrentPlayer,
-        moveTime, whiteTime, blackTime, whiteIncrement, blackIncrement);
-    
-    var stopwatch = Stopwatch.StartNew();
-    var reporter = new UciSearchReporter();
-    _engine.FindBestMoveWithIterativeDeepening(
-        _game, 
-        new SearchParameters { Depth = depth, UseTranspositionTable = false },
-        reporter
-    );
-    stopwatch.Stop();
-    Console.WriteLine($"Время выполнения: {stopwatch.ElapsedMilliseconds} ms");
-}
-    
-    private static int CalculateTimeForMove(ChessColor currentColor, 
-        int? moveTime, int? whiteTime, int? blackTime, 
-        int? whiteIncrement, int? blackIncrement)
-    {
-        if (moveTime.HasValue) return moveTime.Value;
+    var hasTimeLimit = moveTime.HasValue || 
+                       (whiteTime.HasValue && _game.CurrentPlayer == ChessColor.White) || 
+                       (blackTime.HasValue && _game.CurrentPlayer == ChessColor.Black);
 
-        var timeLeft = currentColor == ChessColor.White ? 
-            whiteTime ?? 60000 : blackTime ?? 60000;
-        var increment = currentColor == ChessColor.White ? 
-            whiteIncrement ?? 0 : blackIncrement ?? 0;
+    if (!depthSpecified && hasTimeLimit) depth = MaxDepth;
+
+    if (moveTime.HasValue) Canceler.StopByTimeLimit(TimeSpan.FromMilliseconds(moveTime.Value));
+    else switch (_game.CurrentPlayer)
+    {
+        case ChessColor.White when whiteTime.HasValue:
+            Canceler.StopByTimeLimit(TimeSpan.FromMilliseconds(TimeForMove(whiteTime.Value, whiteIncrement ?? 0)));
+            break;
+        case ChessColor.Black when blackTime.HasValue:
+            Canceler.StopByTimeLimit(TimeSpan.FromMilliseconds(TimeForMove(blackTime.Value, blackIncrement ?? 0)));
+            break;
+    }
+
+    _engine.FindBestMoveWithIterativeDeepening(
+        _game,
+        new SearchParameters { Depth = depth, UseTranspositionTable = false },
+        Reporter,
+        Canceler
+    );
     
-        var baseTime = timeLeft / 20;
-        var bonusTime = increment / 2;
-    
-        var calculatedTime = baseTime + bonusTime;
-    
-        calculatedTime = Math.Min(calculatedTime, (int)(timeLeft * 0.8));
-    
-        return calculatedTime;
+    Canceler.Reset();
+}
+
+    private static int TimeForMove(int baseTime, int incrementTime)
+    {
+        return (int)(baseTime / 20.0 + incrementTime / 2.0);
     }
 }

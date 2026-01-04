@@ -9,7 +9,7 @@ public class SearchOrchestrator(Evaluator evaluator)
 {
     private readonly MoveOrderingService _moveOrderingService = new(evaluator);
 
-    public EngineResult FindBestMove(SearchContext context)
+    public EngineResult? FindBestMove(SearchContext context)
     {
         TranspositionService.IncrementAge();
         var game = context.Game;
@@ -24,6 +24,7 @@ public class SearchOrchestrator(Evaluator evaluator)
 
         foreach (var move in moves)
         {
+            if (context.SearchCanceler?.ShouldStop is true) return null;
             game.MakeMove(move);
             var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color);
             game.UndoLastMove();

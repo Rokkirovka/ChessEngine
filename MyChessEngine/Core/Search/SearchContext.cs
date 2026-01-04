@@ -9,7 +9,8 @@ public class SearchContext(
     SearchParameters parameters,
     Evaluator evaluator,
     PvTableManager pvTableManager,
-    MoveOrderingService moveOrderingService)
+    MoveOrderingService moveOrderingService,
+    SearchCanceler? searchCanceler = null)
 {
     public ChessGame Game { get; } = game;
     public SearchParameters Parameters { get; } = parameters;
@@ -17,6 +18,7 @@ public class SearchContext(
     public int NodesVisited { get; set; }
     public PvTableManager PvTableManager { get; } = pvTableManager;
     public MoveOrderingService MoveOrderingService { get; } = moveOrderingService;
+    public SearchCanceler? SearchCanceler { get; set; } = searchCanceler;
 }
 
     
