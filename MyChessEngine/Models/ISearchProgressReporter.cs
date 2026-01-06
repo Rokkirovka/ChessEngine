@@ -1,7 +1,6 @@
 using MyChess.Models.Moves;
-using MyChessEngine.Models;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Models;
 
 public interface ISearchProgressReporter
 {

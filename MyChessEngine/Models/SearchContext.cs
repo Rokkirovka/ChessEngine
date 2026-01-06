@@ -1,14 +1,16 @@
 using MyChess.Core;
+using MyChessEngine.Core;
 using MyChessEngine.Core.Evaluation;
-using MyChessEngine.Models;
+using MyChessEngine.Core.Search;
+using MyChessEngine.Core.Services;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Models;
 
 public class SearchContext(
     ChessGame game,
     SearchParameters parameters,
     Evaluator evaluator,
-    PvTableManager pvTableManager,
+    PvTableService pvTableService,
     MoveOrderingService moveOrderingService,
     SearchCanceler? searchCanceler = null)
 {
@@ -16,9 +18,10 @@ public class SearchContext(
     public SearchParameters Parameters { get; } = parameters;
     public Evaluator Evaluator { get; } = evaluator;
     public int NodesVisited { get; set; }
-    public PvTableManager PvTableManager { get; } = pvTableManager;
+    public PvTableService PvTableService { get; } = pvTableService;
     public MoveOrderingService MoveOrderingService { get; } = moveOrderingService;
     public SearchCanceler? SearchCanceler { get; set; } = searchCanceler;
+    public bool NullMovePlayedInCurrentBranch { get; set; }
 }
 
     

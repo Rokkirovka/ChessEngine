@@ -1,6 +1,6 @@
 using MyChess.Core;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Core.Services;
 
 public static class TerminalNodeChecker
 {
@@ -20,6 +20,5 @@ public static class TerminalNodeChecker
 
     }
     
-    public static int AdjustScoreForDepth(int score, int depth) 
-        => score - depth;
+    public static int AdjustScoreForDepth(int score, int depth) => score - depth;
 }

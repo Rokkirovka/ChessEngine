@@ -1,5 +1,6 @@
 using MyChess.Hashing;
 using MyChessEngine.Core.Evaluation;
+using MyChessEngine.Models;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
@@ -8,8 +9,10 @@ public static class QuiescenceSearch
 {
     private static readonly TranspositionTable QuiescenceTable = new(1 << 16, 2); 
     
-    public static int Search(SearchContext context, int depth, Evaluator evaluator, int alpha, int beta, int color)
+    public static int? Search(SearchContext context, int depth, Evaluator evaluator, int alpha, int beta, int color)
     {
+        if (context.SearchCanceler?.ShouldStop is true) return null;
+        
         if (!context.Parameters.UseQuiescenceSearch) 
             return Evaluator.EvaluatePosition(context.Game.Board) * color;
 
@@ -48,15 +51,20 @@ public static class QuiescenceSearch
 
         foreach (var move in moves)
         {
+            if (context.SearchCanceler?.ShouldStop is true) return null;
+            
             context.NodesVisited++;
             game.MakeMove(move);
             var score = -Search(context, depth, evaluator, -beta, -alpha, -color);
             game.UndoLastMove();
+            
+            if (score is null) return null;
 
-            if (score > alpha) alpha = score;
+            if (score > alpha) alpha = score.Value;
             if (alpha >= beta) break;
         }
 
+        QuiescenceTable.Store(hash, alpha, 0, null, NodeType.Exact);
         return alpha;
     }
 }

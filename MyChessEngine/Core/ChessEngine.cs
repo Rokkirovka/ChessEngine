@@ -1,6 +1,7 @@
 using MyChess.Core;
 using MyChessEngine.Core.Evaluation;
 using MyChessEngine.Core.Search;
+using MyChessEngine.Core.Services;
 using MyChessEngine.Models;
 
 namespace MyChessEngine.Core;
@@ -27,7 +28,7 @@ public class ChessEngine
         if (progressReporter != null) _iterativeDeepeningSearch.SetProgressReporter(progressReporter);
         if (searchCanceler != null) _iterativeDeepeningSearch.SetSearchCanceler(searchCanceler);
         
-        var context = new SearchContext(game, searchParameters, _evaluator, new PvTableManager(searchParameters.Depth), _moveOrderingService);
+        var context = new SearchContext(game, searchParameters, _evaluator, new PvTableService(searchParameters.Depth), _moveOrderingService);
         return _iterativeDeepeningSearch.FindBestMove(context);
     }
 }

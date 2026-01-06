@@ -1,7 +1,9 @@
 using MyChess.Models;
 using MyChess.Models.Moves;
 using MyChessEngine.Core.Evaluation;
+using MyChessEngine.Core.Services;
 using MyChessEngine.Models;
+using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
@@ -29,11 +31,14 @@ public class SearchOrchestrator(Evaluator evaluator)
             var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color);
             game.UndoLastMove();
 
+            if (score is null) return null; // Поиск был отменен
+            if (context.SearchCanceler?.ShouldStop is true) return null;
+
             if (score > alpha)
             {
-                alpha = score;
+                alpha = score.Value;
                 bestMove = move;
-                context.PvTableManager.UpdatePvLine(move, 0);
+                context.PvTableService.UpdatePvLine(move, 0);
             }
 
             _moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
@@ -43,7 +48,7 @@ public class SearchOrchestrator(Evaluator evaluator)
             alpha * color, 
             bestMove, 
             context.NodesVisited, 
-            context.PvTableManager.GetPrincipalVariation()
+            context.PvTableService.GetPrincipalVariation()
         );
     }
 }

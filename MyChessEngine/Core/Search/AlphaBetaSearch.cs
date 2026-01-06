@@ -1,13 +1,17 @@
 using MyChess.Hashing;
 using MyChess.Models.Moves;
+using MyChessEngine.Core.Services;
+using MyChessEngine.Models;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
 public static class AlphaBetaSearch
 {
-    public static int SearchInternal(SearchContext context, int depthLeft, int alpha, int beta, int color)
+    public static int? SearchInternal(SearchContext context, int depthLeft, int alpha, int beta, int color)
     {
+        if (context.SearchCanceler?.ShouldStop is true) return null;
+        
         context.NodesVisited++;
 
         if (TerminalNodeChecker.IsTerminalNode(context.Game, out var terminalScore))
@@ -25,7 +29,7 @@ public static class AlphaBetaSearch
             : SearchMoves(context, depthLeft, alpha, beta, color, hash);
     }
 
-    private static int HandleTranspositionResult(int score, NodeType nodeType, int alpha, int beta)
+    private static int? HandleTranspositionResult(int score, NodeType nodeType, int alpha, int beta)
     {
         switch (nodeType)
         {
@@ -43,7 +47,7 @@ public static class AlphaBetaSearch
         return alpha >= beta ? score : alpha;
     }
 
-    private static int SearchMoves(SearchContext context, int depthLeft, int alpha, int beta, int color, ulong hash)
+    private static int? SearchMoves(SearchContext context, int depthLeft, int alpha, int beta, int color, ulong hash)
     {
         var moves = context.MoveOrderingService.OrderMoves(context.Game, context.Game.GetAllPossibleMoves());
         ChessMove? bestMoveInNode = null;
@@ -52,14 +56,18 @@ public static class AlphaBetaSearch
         var moveIndex = 0;
         foreach (var move in moves)
         {
+            if (context.SearchCanceler?.ShouldStop is true) return null;
+            
             var score = LateMoveReduction.SearchWithLmr(context, move, depthLeft, alpha, beta, color, moveIndex);
+            
+            if (score is null) return null;
 
             if (score > alpha)
             {
-                alpha = score;
+                alpha = score.Value;
                 bestMoveInNode = move;
                 nodeType = NodeType.Exact;
-                context.PvTableManager.UpdatePvLine(move, context.Parameters.Depth - depthLeft);
+                context.PvTableService.UpdatePvLine(move, context.Parameters.Depth - depthLeft);
             }
 
             if (alpha >= beta)
@@ -71,6 +79,7 @@ public static class AlphaBetaSearch
 
             moveIndex++;
         }
+        
         TranspositionService.Store(context, hash, alpha, depthLeft, bestMoveInNode, nodeType);
         return alpha;
     }

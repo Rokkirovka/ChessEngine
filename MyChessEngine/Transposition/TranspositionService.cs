@@ -1,7 +1,8 @@
 using MyChess.Models.Moves;
-using MyChessEngine.Transposition;
+using MyChessEngine.Core.Search;
+using MyChessEngine.Models;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Transposition;
 
 public static class TranspositionService
 {

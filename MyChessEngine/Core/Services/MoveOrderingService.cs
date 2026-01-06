@@ -1,8 +1,9 @@
 using MyChess.Core;
 using MyChess.Models.Moves;
 using MyChessEngine.Core.Evaluation;
+using MyChessEngine.Models;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Core.Services;
 
 public class MoveOrderingService(Evaluator evaluator)
 {

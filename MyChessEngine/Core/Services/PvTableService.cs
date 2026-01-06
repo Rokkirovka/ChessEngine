@@ -1,13 +1,13 @@
 using MyChess.Models.Moves;
 
-namespace MyChessEngine.Core.Search;
+namespace MyChessEngine.Core.Services;
 
-public class PvTableManager
+public class PvTableService
 {
     private readonly ChessMove?[][] _triangularTable;
     private readonly int _depth;
 
-    public PvTableManager(int depth)
+    public PvTableService(int depth)
     {
         _depth = depth;
         _triangularTable = new ChessMove?[depth][];
