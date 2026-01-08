@@ -9,14 +9,14 @@ namespace MyChessEngine.Models;
 public class SearchContext(
     ChessGame game,
     SearchParameters parameters,
-    Evaluator evaluator,
+    MoveEvaluator moveEvaluator,
     PvTableService pvTableService,
     MoveOrderingService moveOrderingService,
     SearchCanceler? searchCanceler = null)
 {
     public ChessGame Game { get; } = game;
     public SearchParameters Parameters { get; } = parameters;
-    public Evaluator Evaluator { get; } = evaluator;
+    public MoveEvaluator MoveEvaluator { get; } = moveEvaluator;
     public int NodesVisited { get; set; }
     public PvTableService PvTableService { get; } = pvTableService;
     public MoveOrderingService MoveOrderingService { get; } = moveOrderingService;

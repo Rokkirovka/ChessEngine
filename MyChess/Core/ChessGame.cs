@@ -222,7 +222,7 @@ public class ChessGame
         if (enPassantTarget.HasValue)
         {
             var file = enPassantTarget.Value % 8;
-            var rank = 7 - (enPassantTarget.Value / 8);
+            var rank = 7 - enPassantTarget.Value / 8;
             var fileChar = (char)('a' + file);
             var rankChar = (char)('1' + rank);
             Console.WriteLine($"En passant target: {fileChar}{rankChar}");

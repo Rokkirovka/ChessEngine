@@ -5,17 +5,17 @@ using MyChessEngine.Models;
 
 namespace MyChessEngine.Core.Services;
 
-public class MoveOrderingService(Evaluator evaluator)
+public class MoveOrderingService(MoveEvaluator moveEvaluator)
 {
     public IEnumerable<ChessMove> OrderMoves(ChessGame game, IEnumerable<ChessMove> moves)
-        => moves.OrderByDescending(move => evaluator.EvaluateMove(game, move));
+        => moves.OrderByDescending(move => moveEvaluator.EvaluateMove(game, move));
     
     public void UpdateHeuristics(SearchContext context, ChessMove move, int depth)
     {
         if (context.Game.GetPiece(move.To) is not null) return;
         if (context.Parameters.UseKillerMoves)
-            evaluator.UpdateKillerMoves(move, context.Game.Ply);
+            moveEvaluator.UpdateKillerMoves(move, context.Game.Ply);
         if (context.Parameters.UseHistoryTable)
-            evaluator.UpdateHistoryTable(context.Game.GetPiece(move.From)!.Index, move.To, depth);
+            moveEvaluator.UpdateHistoryTable(context.Game.GetPiece(move.From)!.Index, move.To, depth);
     }
 }

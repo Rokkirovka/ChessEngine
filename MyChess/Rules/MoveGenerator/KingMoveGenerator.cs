@@ -32,31 +32,33 @@ public class KingMoveGenerator : IMoveGenerator
     private static BitBoard CalculateKingAttackMask(int cell)
     {
         ulong attacks = 0;
-        BitBoard bitBoard = new();
-        bitBoard.SetBit(cell);
+        var bitBoard = new BitBoard(0UL);
+        bitBoard = bitBoard.SetBit(cell);
 
-        attacks |= (bitBoard >> 8) | (bitBoard << 8); 
+        attacks |= (ulong)(bitBoard >> 8) | (ulong)(bitBoard << 8); 
     
-        attacks |= (bitBoard >> 9) & FileHExcludedMask;
-        attacks |= (bitBoard >> 7) & FileAExcludedMask; 
-        attacks |= (bitBoard >> 1) & FileHExcludedMask;
+        attacks |= (ulong)(bitBoard >> 9) & FileHExcludedMask;
+        attacks |= (ulong)(bitBoard >> 7) & FileAExcludedMask; 
+        attacks |= (ulong)(bitBoard >> 1) & FileHExcludedMask;
     
-        attacks |= (bitBoard << 9) & FileAExcludedMask;
-        attacks |= (bitBoard << 7) & FileHExcludedMask;
-        attacks |= (bitBoard << 1) & FileAExcludedMask; 
+        attacks |= (ulong)(bitBoard << 9) & FileAExcludedMask;
+        attacks |= (ulong)(bitBoard << 7) & FileHExcludedMask;
+        attacks |= (ulong)(bitBoard << 1) & FileAExcludedMask; 
 
-        return attacks;
+        return new BitBoard(attacks);
     }
 
     public IEnumerable<ChessMove> GetPossibleMoves(int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
     {
         var attacks = KingAttackMasks[pieceCell];
-        var validTargets = (BitBoard)(attacks & ~friendlyPieces);
-        for (var i = 0; i < 8; i++)
+        var validTargets = attacks & ~friendlyPieces;
+        var tempValidTargets = validTargets;
+        
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
+            tempValidTargets = tempValidTargets.ClearBit(index);
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

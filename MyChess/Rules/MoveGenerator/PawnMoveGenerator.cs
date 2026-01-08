@@ -13,10 +13,7 @@ public abstract class PawnMoveGenerator : IMoveGenerator
     private const ulong FileHExcludedMask = 9187201950435737471UL;
     private const ulong SecondRankMask = 71776119061217280UL;
     private const ulong SeventhRankMask = 65280UL;
-    private const ulong EighthRankExcludedMask = 18446744073709551360UL;
-    private const ulong FirstRankExcludedMask = 72057594037927935UL;
     
-
     static PawnMoveGenerator()
     {
         PawnAttackMasks[0] = new BitBoard[64];
@@ -48,45 +45,45 @@ public abstract class PawnMoveGenerator : IMoveGenerator
     private static BitBoard CalculatePawnAttackMask(ChessColor color, int cell)
     {
         ulong attacks = 0;
-        BitBoard bitBoard = new();
-        bitBoard.SetBit(cell);
+        var bitBoard = new BitBoard(0UL);
+        bitBoard = bitBoard.SetBit(cell);
 
         if (color is ChessColor.White)
         {
-            attacks |= (bitBoard >> 7) & FileAExcludedMask;
-            attacks |= (bitBoard >> 9) & FileHExcludedMask;
+            attacks |= (ulong)(bitBoard >> 7) & FileAExcludedMask;
+            attacks |= (ulong)(bitBoard >> 9) & FileHExcludedMask;
         }
         else
         {
-            attacks |= (bitBoard << 7) & FileHExcludedMask;
-            attacks |= (bitBoard << 9) & FileAExcludedMask;
+            attacks |= (ulong)(bitBoard << 7) & FileHExcludedMask;
+            attacks |= (ulong)(bitBoard << 9) & FileAExcludedMask;
         }
 
-        return attacks;
+        return new BitBoard(attacks);
     }
 
     private static BitBoard CalculatePawnMoveMask(ChessColor color, int cell)
     {
         ulong moves = 0;
-        BitBoard bitBoard = new();
-        bitBoard.SetBit(cell);
+        var bitBoard = new BitBoard(0UL);
+        bitBoard = bitBoard.SetBit(cell);
 
         if (color is ChessColor.White)
         {
-            moves |= bitBoard >> 8;
+            moves |= (ulong)(bitBoard >> 8);
         }
         else
         {
-            moves |= bitBoard << 8;
+            moves |= (ulong)(bitBoard << 8);
         }
 
-        return moves;
+        return new BitBoard(moves);
     }
 
     protected static IEnumerable<ChessMove> GetPossibleMoves(int color, int pieceCell, BitBoard enemyPieces,
         BitBoard friendlyPieces)
     {
-        BitBoard allPieces = enemyPieces | friendlyPieces;
+        var allPieces = enemyPieces | friendlyPieces;
         var direction = color == 0 ? -8 : +8;
 
         var targetSquare = pieceCell + direction;
@@ -104,14 +101,15 @@ public abstract class PawnMoveGenerator : IMoveGenerator
 
         var attacks = PawnAttackMasks[color][pieceCell];
         var moves = PawnMoveMasks[color][pieceCell];
-        var validTargets = (BitBoard)((attacks & enemyPieces) | (moves & ~allPieces));
+        var validTargets = (attacks & enemyPieces) | (moves & ~allPieces);
+        var tempValidTargets = validTargets;
 
-        for (var i = 0; i < 4; i++)
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
-            if (index < 8 || index > 55) break;
+            tempValidTargets = tempValidTargets.ClearBit(index);
+            if (index < 8 || index > 55) continue;
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

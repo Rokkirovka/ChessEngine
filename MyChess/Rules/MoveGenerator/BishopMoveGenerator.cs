@@ -141,7 +141,7 @@ public class BishopMoveGenerator : IMoveGenerator
         occupancy &= BishopMasks[cell];
         occupancy *= BishopMagics[cell];
         occupancy >>= BishopShifts[cell];
-        return BishopAttacks[cell, occupancy];
+        return (BitBoard)BishopAttacks[cell, occupancy];
     }
 
     private static int CountBits(ulong x)
@@ -170,15 +170,16 @@ public class BishopMoveGenerator : IMoveGenerator
 
     public IEnumerable<ChessMove> GetPossibleMoves(int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
     {
-        BitBoard allPieces = enemyPieces | friendlyPieces;
-        var attacks = GetBishopAttacks(pieceCell, allPieces);
-        BitBoard validTargets = attacks & ~friendlyPieces;
+        var allPieces = enemyPieces | friendlyPieces;
+        var attacks = GetBishopAttacks(pieceCell, (ulong)allPieces);
+        var validTargets = attacks & ~friendlyPieces;
+        var tempValidTargets = validTargets;
         
-        while (validTargets != 0)
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
+            tempValidTargets = tempValidTargets.ClearBit(index);
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

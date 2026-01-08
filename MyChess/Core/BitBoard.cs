@@ -1,61 +1,29 @@
+using System.Numerics;
+
 namespace MyChess.Core;
 
-public class BitBoard(ulong value = 0UL)
+public readonly record struct BitBoard(ulong Value = 0UL)
 {
-    private ulong _value = value;
+    public bool GetBit(int cell) => (Value & (1UL << cell)) != 0;
+    public BitBoard SetBit(int cell) => new(Value | (1UL << cell));
+    public BitBoard ClearBit(int cell) => new(Value & ~(1UL << cell));
+    public bool HasBit(int cell) => (Value & (1UL << cell)) != 0;
+    public int CountBits() => BitOperations.PopCount(Value);
+    public int GetLeastSignificantBitIndex() => Value == 0 ? -1 : BitOperations.TrailingZeroCount(Value);
 
-    public bool GetBit(int cell)
-    {
-        return (_value & (1UL << cell)) != 0;
-    }
+    public static BitBoard operator <<(BitBoard bb, int shift) => new(bb.Value << shift);
+    public static BitBoard operator >> (BitBoard bb, int shift) => new(bb.Value >> shift);
+    public static explicit operator ulong(BitBoard bb) => bb.Value;
+    public static explicit operator BitBoard(ulong value) => new(value);
+    public static BitBoard operator &(BitBoard left, BitBoard right) => new(left.Value & right.Value);
+    public static BitBoard operator |(BitBoard left, BitBoard right) => new(left.Value | right.Value);
+    public static BitBoard operator ~(BitBoard bb) => new(~bb.Value);
+    public static BitBoard operator ^(BitBoard left, BitBoard right) => new(left.Value ^ right.Value);
 
-    public void SetBit(int cell)
-    {
-        _value |= 1UL << cell;
-    }
-
-    public bool PopBit(int cell)
-    {
-        var mask = 1UL << cell;
-        var wasSet = (_value & mask) != 0;
-        _value &= ~mask;
-        return wasSet;
-    }
-
-    public int CountBits()
-    {
-        var count = 0;
-        var bitBoard = _value;
-        while (bitBoard != 0)
-        {
-            bitBoard &= bitBoard - 1;
-            count++;
-        }
-        return count;
-    }
-    
-    public int GetLeastSignificantBitIndex()
-    {
-        var count = 0;
-        if (_value== 0) return -1;
-        var ls1B = (_value & (ulong)-(long)_value) - 1;
-        while (ls1B != 0)
-        {
-            ls1B &= ls1B - 1;
-            count++;
-        }
-        return count;
-    }
-    
-    public static BitBoard operator <<(BitBoard bb, int shift) => bb._value << shift;
-    public static BitBoard operator >>(BitBoard bb, int shift) => bb._value >> shift;
-    public static implicit operator ulong(BitBoard bb) => bb._value;
-    public static implicit operator BitBoard(ulong value) => new() { _value = value };
-    
     public override string ToString()
     {
         var result = "\n";
-        
+
         for (var rank = 0; rank < 8; rank++)
         {
             for (var file = 0; file < 8; file++)
@@ -63,8 +31,10 @@ public class BitBoard(ulong value = 0UL)
                 var square = rank * 8 + file;
                 result += $" {(GetBit(square) ? 1 : 0)}";
             }
+
             result += "\n";
         }
+
         return result;
     }
 }

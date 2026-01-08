@@ -12,19 +12,20 @@ public class QueenMoveGenerator : IMoveGenerator
 
     public IEnumerable<ChessMove> GetPossibleMoves(int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
     {
-        BitBoard allPieces = enemyPieces | friendlyPieces;
+        var allPieces = enemyPieces | friendlyPieces;
         
-        var rookAttacks = RookMoveGenerator.GetRookAttacks(pieceCell, allPieces);
-        var bishopAttacks = BishopMoveGenerator.GetBishopAttacks(pieceCell, allPieces);
+        var rookAttacks = RookMoveGenerator.GetRookAttacks(pieceCell, (ulong)allPieces);
+        var bishopAttacks = BishopMoveGenerator.GetBishopAttacks(pieceCell, (ulong)allPieces);
         var attacks = rookAttacks | bishopAttacks;
         
-        BitBoard validTargets = attacks & ~friendlyPieces;
+        var validTargets = attacks & ~friendlyPieces;
+        var tempValidTargets = validTargets;
         
-        while (validTargets != 0)
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
+            tempValidTargets = tempValidTargets.ClearBit(index);
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

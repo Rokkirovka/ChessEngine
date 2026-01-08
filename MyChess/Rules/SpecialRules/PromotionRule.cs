@@ -21,12 +21,14 @@ public static class PromotionRule
             if ((SeventhRankMask & (1UL << pawnPos)) == 0) yield break;
             var attacks = WhitePawnMoveGenerator.WhitePawnAttackMasks[pawnPos];
             var moves = WhitePawnMoveGenerator.WhitePawnMoveMasks[pawnPos];
-            var validTargets = (BitBoard)((attacks & board.Occupancies[1]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1])));
-            for (var i = 0; i < 3; i++)
+            var validTargets = (attacks & board.Occupancies[1]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1]));
+            var tempValidTargets = validTargets;
+            
+            while (tempValidTargets.Value != 0)
             {
-                var index = validTargets.GetLeastSignificantBitIndex();
+                var index = tempValidTargets.GetLeastSignificantBitIndex();
                 if (index == -1) break;
-                validTargets.PopBit(index);
+                tempValidTargets = tempValidTargets.ClearBit(index);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Queen.White);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Rook.White);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Bishop.White);
@@ -38,12 +40,14 @@ public static class PromotionRule
             if ((SecondRankMask & (1UL << pawnPos)) == 0) yield break;
             var attacks = BlackPawnMoveGenerator.BlackPawnAttackMasks[pawnPos];
             var moves = BlackPawnMoveGenerator.BlackPawnMoveMasks[pawnPos];
-            var validTargets = (BitBoard)((attacks & board.Occupancies[0]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1])));
-            for (var i = 0; i < 3; i++)
+            var validTargets = (attacks & board.Occupancies[0]) | (moves & ~(board.Occupancies[0] | board.Occupancies[1]));
+            var tempValidTargets = validTargets;
+            
+            while (tempValidTargets.Value != 0)
             {
-                var index = validTargets.GetLeastSignificantBitIndex();
+                var index = tempValidTargets.GetLeastSignificantBitIndex();
                 if (index == -1) break;
-                validTargets.PopBit(index);
+                tempValidTargets = tempValidTargets.ClearBit(index);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Queen.Black);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Rook.Black);
                 yield return new PromotionMove((ChessCell)pawnPos, (ChessCell)index, Bishop.Black);

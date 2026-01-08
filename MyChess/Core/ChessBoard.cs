@@ -7,6 +7,20 @@ public class ChessBoard
 {
     public BitBoard[] BitBoards = new BitBoard[12]; 
     
+    public BitBoard WhitePawns => BitBoards[0];
+    public BitBoard WhiteKnights => BitBoards[1];
+    public BitBoard WhiteBishops => BitBoards[2];
+    public BitBoard WhiteRooks => BitBoards[3];
+    public BitBoard WhiteQueens => BitBoards[4];
+    public BitBoard WhiteKing => BitBoards[5];
+    
+    public BitBoard BlackPawns => BitBoards[6];
+    public BitBoard BlackKnights => BitBoards[7];
+    public BitBoard BlackBishops => BitBoards[8];
+    public BitBoard BlackRooks => BitBoards[9];
+    public BitBoard BlackQueens => BitBoards[10];
+    public BitBoard BlackKing => BitBoards[11];
+    
     public readonly BitBoard[] Occupancies = new BitBoard[2];
     
     public ChessBoard()
@@ -70,12 +84,12 @@ public class ChessBoard
     
         for (var i = 0; i < 12; i++)
         {
-            clone.BitBoards[i] = new BitBoard(BitBoards[i]);
+            clone.BitBoards[i] = BitBoards[i];
         }
     
         for (var i = 0; i < 2; i++)
         {
-            clone.Occupancies[i] = new BitBoard(Occupancies[i]);
+            clone.Occupancies[i] = Occupancies[i];
         }
     
         return clone;
@@ -86,33 +100,41 @@ public class ChessBoard
         var piece = -1;
         for (var i = 0; i < 12; i++)
         {
-            if (!BitBoards[i].PopBit(from)) continue;
+            if (!BitBoards[i].GetBit(from)) continue;
             piece = i;
-            Occupancies[piece / 6].PopBit(from);
+            BitBoards[i] = BitBoards[i].ClearBit(from);
+            Occupancies[piece / 6] = Occupancies[piece / 6].ClearBit(from);
             break;
         }
         if (piece == -1) return;
         
-        BitBoards[piece].SetBit(to);
-        Occupancies[piece / 6].SetBit(to);
+        BitBoards[piece] = BitBoards[piece].SetBit(to);
+        Occupancies[piece / 6] = Occupancies[piece / 6].SetBit(to);
         
-        if (!Occupancies[1 - piece / 6].PopBit(to)) return;
-        
-        for (var i = 0; i < 12; i++)
+        var opponentOccupancy = Occupancies[1 - piece / 6];
+        if (opponentOccupancy.GetBit(to))
         {
-            if (i == piece || !BitBoards[i].PopBit(to)) continue;
-            return;
+            Occupancies[1 - piece / 6] = opponentOccupancy.ClearBit(to);
+            
+            for (var i = 0; i < 12; i++)
+            {
+                if (i == piece || !BitBoards[i].GetBit(to)) continue;
+                BitBoards[i] = BitBoards[i].ClearBit(to);
+                return;
+            }
         }
     }
 
     public void RemovePiece(int cell)
     {
-        if (!((BitBoard)(Occupancies[0] | Occupancies[1])).GetBit(cell)) return;
+        var allPieces = Occupancies[0] | Occupancies[1];
+        if (!allPieces.GetBit(cell)) return;
     
         for (var i = 0; i < 12; i++)
         {
-            if (!BitBoards[i].PopBit(cell)) continue;
-            Occupancies[i / 6].PopBit(cell);
+            if (!BitBoards[i].GetBit(cell)) continue;
+            BitBoards[i] = BitBoards[i].ClearBit(cell);
+            Occupancies[i / 6] = Occupancies[i / 6].ClearBit(cell);
             return;
         }
     }
@@ -121,19 +143,20 @@ public class ChessBoard
     {
         for (var i = 0; i < 12; i++)
         {
-            if (!BitBoards[i].PopBit(cell)) continue;
-            Occupancies[i / 6].PopBit(cell);
+            if (!BitBoards[i].GetBit(cell)) continue;
+            BitBoards[i] = BitBoards[i].ClearBit(cell);
+            Occupancies[i / 6] = Occupancies[i / 6].ClearBit(cell);
             break;
         }
         if (piece == null) return;
     
-        BitBoards[piece.Index].SetBit(cell);
-        Occupancies[piece.Index / 6].SetBit(cell);
+        BitBoards[piece.Index] = BitBoards[piece.Index].SetBit(cell);
+        Occupancies[piece.Index / 6] = Occupancies[piece.Index / 6].SetBit(cell);
     }
 
     public int FindKing(ChessColor color)
     {
-        var bitBoard = color == ChessColor.White ? BitBoards[5] : BitBoards[11];
+        var bitBoard = color == ChessColor.White ? WhiteKing : BlackKing;
         return bitBoard.GetLeastSignificantBitIndex();
     }
 }

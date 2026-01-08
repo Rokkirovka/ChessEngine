@@ -7,9 +7,9 @@ using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
-public class SearchOrchestrator(Evaluator evaluator)
+public class SearchOrchestrator(MoveEvaluator moveEvaluator)
 {
-    private readonly MoveOrderingService _moveOrderingService = new(evaluator);
+    private readonly MoveOrderingService _moveOrderingService = new(moveEvaluator);
 
     public EngineResult? FindBestMove(SearchContext context)
     {

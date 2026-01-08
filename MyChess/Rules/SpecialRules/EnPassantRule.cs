@@ -23,7 +23,7 @@ public static class EnPassantRule
         var dir = color == ChessColor.White ? -8 : 8;
         var targetSquare = enPassantSquare + dir;
 
-        if ((pawnAttacks & (1UL << targetSquare)) != 0)
+        if ((ulong)(pawnAttacks & new BitBoard(1UL << targetSquare)) != 0)
         {
             yield return new EnPassantMove((ChessCell)pawnPos, (ChessCell)targetSquare);
         }

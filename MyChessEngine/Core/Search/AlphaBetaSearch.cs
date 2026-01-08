@@ -18,7 +18,7 @@ public static class AlphaBetaSearch
             return TerminalNodeChecker.AdjustScoreForDepth(terminalScore, depthLeft);
 
         if (depthLeft == 0)
-            return QuiescenceSearch.Search(context, depthLeft, context.Evaluator, alpha, beta, color);
+            return QuiescenceSearch.Search(context, depthLeft, context.MoveEvaluator, alpha, beta, color);
 
         var hash = ZobristHasher.CalculateInitialHash(context.Game.Board, context.Game.State);
         if (TranspositionService.TryGetBestMove(context, hash, depthLeft, alpha, beta, out var ttScore, out var nodeType))

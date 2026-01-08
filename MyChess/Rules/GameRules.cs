@@ -24,49 +24,49 @@ public static class GameRules
     private static bool IsKingInCheck(ChessColor kingColor, ChessBoard board)
     {
         var kingPos = kingColor == ChessColor.White
-            ? board.BitBoards[5].GetLeastSignificantBitIndex()
-            : board.BitBoards[11].GetLeastSignificantBitIndex();
+            ? board.WhiteKing.GetLeastSignificantBitIndex()
+            : board.BlackKing.GetLeastSignificantBitIndex();
 
         return IsSquareUnderAttack(kingPos, kingColor, board);
     }
 
     private static bool IsCellAttackedByDiagonal(int position, ChessBoard board, ChessColor cellColor)
     {
-        var bitBoard = cellColor == ChessColor.Black 
-            ? board.BitBoards[2]  | board.BitBoards[4]
-            : board.BitBoards[8] | board.BitBoards[10];
+        var bitBoard = cellColor == ChessColor.Black
+            ? board.WhiteBishops | board.WhiteQueens
+            : board.BlackBishops | board.BlackQueens;
 
-        return (BishopMoveGenerator.GetBishopAttacks(position, 
-            board.Occupancies[0] | board.Occupancies[1]) & bitBoard) != 0;
+        return ((ulong)(BishopMoveGenerator.GetBishopAttacks(position,
+            (ulong)(board.Occupancies[0] | board.Occupancies[1])) & bitBoard)) != 0;
     }
 
     private static bool IsCellAttackedByVerticalOrHorizontal(int position, ChessBoard board, ChessColor cellColor)
     {
-        var bitBoard = cellColor == ChessColor.Black 
-            ? board.BitBoards[3]  | board.BitBoards[4]
-            : board.BitBoards[9] | board.BitBoards[10];
-        return (RookMoveGenerator.GetRookAttacks(position, 
-            board.Occupancies[0] | board.Occupancies[1]) & bitBoard) != 0;
+        var bitBoard = cellColor == ChessColor.Black
+            ? board.WhiteRooks | board.WhiteQueens
+            : board.BlackRooks | board.BlackQueens;
+        return ((ulong)(RookMoveGenerator.GetRookAttacks(position,
+            (ulong)(board.Occupancies[0] | board.Occupancies[1])) & bitBoard)) != 0;
     }
 
     private static bool IsCellAttackedByKnight(int position, ChessBoard board, ChessColor cellColor)
     {
-        var bitBoard = cellColor == ChessColor.Black ? board.BitBoards[1] : board.BitBoards[7];
-        return (KnightMoveGenerator.KnightAttackMasks[position] & bitBoard) != 0;
+        var bitBoard = cellColor == ChessColor.Black ? board.WhiteKnights : board.BlackKnights;
+        return ((ulong)(KnightMoveGenerator.KnightAttackMasks[position] & bitBoard)) != 0;
     }
 
     private static bool IsCellAttackedByPawn(int position, ChessBoard board, ChessColor cellColor)
     {
-        var bitBoard = cellColor == ChessColor.Black ? board.BitBoards[0] : board.BitBoards[6];
+        var bitBoard = cellColor == ChessColor.Black ? board.WhitePawns : board.BlackPawns;
         if (cellColor == ChessColor.White)
-            return (WhitePawnMoveGenerator.WhitePawnAttackMasks[position] & bitBoard) != 0;
-        return (BlackPawnMoveGenerator.BlackPawnAttackMasks[position] & bitBoard) != 0;
+            return ((ulong)(WhitePawnMoveGenerator.WhitePawnAttackMasks[position] & bitBoard)) != 0;
+        return ((ulong)(BlackPawnMoveGenerator.BlackPawnAttackMasks[position] & bitBoard)) != 0;
     }
 
     private static bool IsCellAttackedByKing(int position, ChessBoard board, ChessColor cellColor)
     {
-        var bitBoard = cellColor == ChessColor.Black ? board.BitBoards[5] : board.BitBoards[11];
-        return (KingMoveGenerator.KingAttackMasks[position] & bitBoard) != 0;
+        var bitBoard = cellColor == ChessColor.Black ? board.WhiteKing : board.BlackKing;
+        return ((ulong)(KingMoveGenerator.KingAttackMasks[position] & bitBoard)) != 0;
     }
 
 
@@ -84,13 +84,13 @@ public static class GameRules
         if (!IsKingInCheck(color, board)) return false;
         return !HasAnyValidMove(color, board, boardState);
     }
-    
+
     public static bool IsStalemate(ChessColor color, ChessBoard board, BoardState boardState)
     {
         if (IsKingInCheck(color, board)) return false;
         return !HasAnyValidMove(color, board, boardState);
     }
-    
+
     private static bool HasAnyValidMove(ChessColor color, ChessBoard board, BoardState boardState)
     {
         var originalColor = boardState.CurrentMoveColor;
@@ -103,43 +103,32 @@ public static class GameRules
                 var piece = board.GetPiece(i);
                 if (piece is null || piece.Color != color) continue;
 
-                var friendlyPieces = color == ChessColor.White ? 
-                    board.Occupancies[0] : board.Occupancies[1];
-                var enemyPieces = color == ChessColor.White ? 
-                    board.Occupancies[1] : board.Occupancies[0];
+                var friendlyPieces = color == ChessColor.White ? board.Occupancies[0] : board.Occupancies[1];
+                var enemyPieces = color == ChessColor.White ? board.Occupancies[1] : board.Occupancies[0];
 
                 var potentialMoves = piece
                     .GetMoveGenerator()
                     .GetPossibleMoves(i, enemyPieces, friendlyPieces);
 
-                foreach (var move in potentialMoves)
-                {
-                    if (IsValidMove(move, board, boardState))
-                        return true;
-                }
+                if (potentialMoves.Any(move => IsValidMove(move, board, boardState)))
+                    return true;
 
                 if (piece is King)
                 {
-                    foreach (var move in CastlingRule.GetCastlingMoves(i, board, boardState))
-                    {
-                        if (IsValidMove(move, board, boardState))
-                            return true;
-                    }
+                    if (CastlingRule.GetCastlingMoves(i, board, boardState)
+                        .Any(move => IsValidMove(move, board, boardState)))
+                        return true;
                 }
-                
+
                 if (piece is Pawn)
                 {
-                    foreach (var move in EnPassantRule.GetEnPassantMoves(i, board, boardState))
-                    {
-                        if (IsValidMove(move, board, boardState))
-                            return true;
-                    }
-                    
-                    foreach (var move in PromotionRule.GetPromotionMoves(i, board, boardState))
-                    {
-                        if (IsValidMove(move, board, boardState))
-                            return true;
-                    }
+                    if (EnPassantRule.GetEnPassantMoves(i, board, boardState)
+                        .Any(move => IsValidMove(move, board, boardState)))
+                        return true;
+
+                    if (PromotionRule.GetPromotionMoves(i, board, boardState)
+                        .Any(move => IsValidMove(move, board, boardState)))
+                        return true;
                 }
             }
 

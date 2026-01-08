@@ -141,7 +141,7 @@ public class RookMoveGenerator : IMoveGenerator
         occupancy &= RookMasks[cell];
         occupancy *= RookMagics[cell];
         occupancy >>= RookShifts[cell];
-        return RookAttacks[cell, occupancy];
+        return (BitBoard)RookAttacks[cell, occupancy];
     }
 
     private static int CountBits(ulong x)
@@ -170,15 +170,16 @@ public class RookMoveGenerator : IMoveGenerator
 
     public IEnumerable<ChessMove> GetPossibleMoves(int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
     {
-        BitBoard allPieces = enemyPieces | friendlyPieces;
-        var attacks = GetRookAttacks(pieceCell, allPieces);
-        BitBoard validTargets = attacks & ~friendlyPieces;
+        var allPieces = enemyPieces | friendlyPieces;
+        var attacks = GetRookAttacks(pieceCell, (ulong)allPieces);
+        var validTargets = attacks & ~friendlyPieces;
+        var tempValidTargets = validTargets;
         
-        while (validTargets != 0)
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
+            tempValidTargets = tempValidTargets.ClearBit(index);
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

@@ -39,32 +39,34 @@ public class KnightMoveGenerator : IMoveGenerator
     private static BitBoard CalculateKnightAttackMask(int cell)
     {
         ulong attacks = 0;
-        BitBoard bitBoard = new();
-        bitBoard.SetBit(cell);
+        var bitBoard = new BitBoard(0UL);
+        bitBoard = bitBoard.SetBit(cell);
 
-        attacks |= (bitBoard >> 17) & FileHExcludedMask;
-        attacks |= (bitBoard >> 15) & FileAExcludedMask;
-        attacks |= (bitBoard >> 10) & FilesHgExcludedMask;
-        attacks |= (bitBoard >> 6) & FilesAbExcludedMask;
+        attacks |= (ulong)(bitBoard >> 17) & FileHExcludedMask;
+        attacks |= (ulong)(bitBoard >> 15) & FileAExcludedMask;
+        attacks |= (ulong)(bitBoard >> 10) & FilesHgExcludedMask;
+        attacks |= (ulong)(bitBoard >> 6) & FilesAbExcludedMask;
 
-        attacks |= (bitBoard << 17) & FileAExcludedMask;
-        attacks |= (bitBoard << 15) & FileHExcludedMask;
-        attacks |= (bitBoard << 10) & FilesAbExcludedMask;
-        attacks |= (bitBoard << 6) & FilesHgExcludedMask;
+        attacks |= (ulong)(bitBoard << 17) & FileAExcludedMask;
+        attacks |= (ulong)(bitBoard << 15) & FileHExcludedMask;
+        attacks |= (ulong)(bitBoard << 10) & FilesAbExcludedMask;
+        attacks |= (ulong)(bitBoard << 6) & FilesHgExcludedMask;
 
-        return attacks;
+        return new BitBoard(attacks);
     }
 
     public IEnumerable<ChessMove> GetPossibleMoves(
         int pieceCell, BitBoard enemyPieces, BitBoard friendlyPieces)
     {
         var attacks = KnightAttackMasks[pieceCell];
-        var validTargets = (BitBoard)(attacks & ~friendlyPieces);
-        for (var i = 0; i < 8; i++)
+        var validTargets = attacks & ~friendlyPieces;
+        var tempValidTargets = validTargets;
+        
+        while (tempValidTargets.Value != 0)
         {
-            var index = validTargets.GetLeastSignificantBitIndex();
+            var index = tempValidTargets.GetLeastSignificantBitIndex();
             if (index == -1) break;
-            validTargets.PopBit(index);
+            tempValidTargets = tempValidTargets.ClearBit(index);
             yield return new StandardMove((ChessCell)pieceCell, (ChessCell)index);
         }
     }

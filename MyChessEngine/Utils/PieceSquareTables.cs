@@ -18,11 +18,11 @@ public static class PieceSquareTables
     {
         for (var i = 0; i < 64; i++)
         {
-            IsolatedMasks[i] = 0UL;
-            WhitePassedMasks[i] = 0UL;
-            BlackPassedMasks[i] = 0UL;
-            FileMasks[i] = 0UL;
-            RankMasks[i] = 0UL;
+            IsolatedMasks[i] = new BitBoard(0UL);
+            WhitePassedMasks[i] = new BitBoard(0UL);
+            BlackPassedMasks[i] = new BitBoard(0UL);
+            FileMasks[i] = new BitBoard(0UL);
+            RankMasks[i] = new BitBoard(0UL);
         }
 
         for (var rank = 0; rank < 8; rank++)
@@ -201,12 +201,12 @@ public static class PieceSquareTables
 
     private static BitBoard GetFileAndRankMask(int file, int rank)
     {
-        BitBoard mask = 0UL;
+        var mask = new BitBoard(0UL);
         for (var i = 0; i < 8; i++)
         for (var j = 0; j < 8; j++)
         {
-            if (file != -1 && j == file) mask.SetBit(i * 8 + j);
-            if (rank != -1 && i == rank) mask.SetBit(i * 8 + j);
+            if (file != -1 && j == file) mask = mask.SetBit(i * 8 + j);
+            if (rank != -1 && i == rank) mask = mask.SetBit(i * 8 + j);
         }
 
         return mask;
