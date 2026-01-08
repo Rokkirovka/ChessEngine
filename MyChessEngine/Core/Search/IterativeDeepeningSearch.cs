@@ -28,7 +28,6 @@ public class IterativeDeepeningSearch(SearchOrchestrator searchOrchestrator)
             var iterationContext = new SearchContext(
                 baseContext.Game,
                 baseContext.Parameters with { Depth = depth },
-                baseContext.MoveEvaluator,
                 baseContext.PvTableService,
                 baseContext.MoveOrderingService,
                 _searchCanceler

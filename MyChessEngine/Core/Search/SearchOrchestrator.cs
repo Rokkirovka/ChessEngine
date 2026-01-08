@@ -1,23 +1,21 @@
 using MyChess.Models;
 using MyChess.Models.Moves;
-using MyChessEngine.Core.Evaluation;
+using MyChessEngine.Core.Evaluation.Moves;
 using MyChessEngine.Core.Services;
 using MyChessEngine.Models;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
 
-public class SearchOrchestrator(MoveEvaluator moveEvaluator)
+public class SearchOrchestrator(MoveOrderingService moveOrderingService)
 {
-    private readonly MoveOrderingService _moveOrderingService = new(moveEvaluator);
-
     public EngineResult? FindBestMove(SearchContext context)
     {
         TranspositionService.IncrementAge();
         var game = context.Game;
         var searchParameters = context.Parameters;
 
-        var moves = _moveOrderingService.OrderMoves(game, game.GetAllPossibleMoves());
+        var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves());
 
         var alpha = -1_000_000;
         const int beta = 1_000_000;
@@ -41,7 +39,7 @@ public class SearchOrchestrator(MoveEvaluator moveEvaluator)
                 context.PvTableService.UpdatePvLine(move, 0);
             }
 
-            _moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
+            moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
         }
 
         return new EngineResult(
