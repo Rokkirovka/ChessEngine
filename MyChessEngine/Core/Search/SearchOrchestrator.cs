@@ -31,7 +31,7 @@ public class SearchOrchestrator(Evaluator evaluator)
             var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color);
             game.UndoLastMove();
 
-            if (score is null) return null; // Поиск был отменен
+            if (score is null) return null;
             if (context.SearchCanceler?.ShouldStop is true) return null;
 
             if (score > alpha)
