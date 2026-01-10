@@ -21,6 +21,9 @@ public class ChessBoard
     public BitBoard BlackQueens => BitBoards[10];
     public BitBoard BlackKing => BitBoards[11];
     
+    public BitBoard WhiteOccupancies => Occupancies[0];
+    public BitBoard BlackOccupancies => Occupancies[1];
+    
     public readonly BitBoard[] Occupancies = new BitBoard[2];
     
     public ChessBoard()

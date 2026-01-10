@@ -1,7 +1,6 @@
 using MyChess.Core;
 using MyChess.Models.Moves;
 using MyChessEngine.Core.Evaluation.Moves.Components;
-using MyChessEngine.Core.Services;
 
 namespace MyChessEngine.Core.Evaluation.Moves;
 

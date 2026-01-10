@@ -1,8 +1,9 @@
 using MyChess.Models;
 using MyChess.Models.Moves;
+using MyChessEngine.Core.Debug;
 using MyChessEngine.Core.Evaluation.Moves;
-using MyChessEngine.Core.Services;
 using MyChessEngine.Models;
+using MyChessEngine.Models.Debug;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
@@ -15,6 +16,14 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var game = context.Game;
         var searchParameters = context.Parameters;
 
+        // Start debug session if enabled
+        context.Debugger?.StartSearch(searchParameters.Depth);
+        if (context.Debugger?.IsEnabled == true)
+        {
+            context.Debugger.EnterNode(null, searchParameters.Depth, -1_000_000, 1_000_000, 0, 
+                game.GetAllPossibleMoves().Count());
+        }
+
         var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves());
 
         var alpha = -1_000_000;
@@ -22,15 +31,29 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var color = game.CurrentPlayer == ChessColor.White ? 1 : -1;
         ChessMove? bestMove = null;
 
+        var moveIndex = 0;
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.ShouldStop is true)
+            {
+                context.Debugger?.MarkBranchRejected(BranchRejectionReason.SearchCancelled, "Search was cancelled");
+                return null;
+            }
+            
             game.MakeMove(move);
             var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color);
             game.UndoLastMove();
 
-            if (score is null) return null;
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (score is null)
+            {
+                context.Debugger?.MarkBranchRejected(BranchRejectionReason.SearchCancelled, "Search returned null");
+                return null;
+            }
+            if (context.SearchCanceler?.ShouldStop is true)
+            {
+                context.Debugger?.MarkBranchRejected(BranchRejectionReason.SearchCancelled, "Search was cancelled");
+                return null;
+            }
 
             if (score > alpha)
             {
@@ -40,6 +63,13 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
             }
 
             moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
+            moveIndex++;
+        }
+
+        // Complete debug session
+        if (context.Debugger?.IsEnabled == true)
+        {
+            context.Debugger.ExitNode(alpha * color, "Root", bestMove, true);
         }
 
         return new EngineResult(

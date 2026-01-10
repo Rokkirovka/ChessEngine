@@ -15,16 +15,21 @@ public static class TranspositionService
         nodeType = NodeType.Exact;
         if (context.Parameters.UseTranspositionTable is false) return false;
     
-        if (!Table.TryGet(hash, out var entry)) return false;
+        if (!Table.TryGet(hash, out var entry, context)) return false;
 
         if (entry.Depth < currentDepth) return false;
         score = entry.Score;
         nodeType = entry.NodeType;
 
-        if (nodeType == NodeType.Exact) return true;
-        if (nodeType == NodeType.LowerBound && score >= beta) return true;  
-        if (nodeType == NodeType.UpperBound && score <= alpha) return true;
-        return false;
+        switch (nodeType)
+        {
+            case NodeType.Exact:
+            case NodeType.LowerBound when score >= beta:
+            case NodeType.UpperBound when score <= alpha:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public static void Store(SearchContext context, ulong hash, int score, int depth, ChessMove? bestMove, NodeType nodeType)

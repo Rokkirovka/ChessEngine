@@ -1,4 +1,5 @@
 using MyChess.Models.Moves;
+using MyChessEngine.Models;
 
 namespace MyChessEngine.Transposition;
 
@@ -40,19 +41,23 @@ public class TranspositionTable
         _table[replacementIndex] = CreateEntry(hash, score, depth, bestMove, nodeType);
     }
 
-    public bool TryGet(ulong hash, out TranspositionTableEntry entry)
+    public bool TryGet(ulong hash, out TranspositionTableEntry entry, SearchContext context)
     {
+        if (!context.Parameters.UseTranspositionTable)
+        {
+            entry = default;
+            return false;
+        }
+
         var bucketIndex = GetBucketIndex(hash);
         var bucketStart = bucketIndex * _bucketSize;
 
         for (var i = 0; i < _bucketSize; i++)
         {
             var candidate = _table[bucketStart + i];
-            if (candidate.Hash == hash)
-            {
-                entry = candidate;
-                return true;
-            }
+            if (candidate.Hash != hash) continue;
+            entry = candidate;
+            return true;
         }
 
         entry = default;
@@ -62,12 +67,6 @@ public class TranspositionTable
     public void IncrementAge()
     {
         _currentAge++;
-    }
-
-    public void Clear()
-    {
-        Array.Clear(_table, 0, _table.Length);
-        _currentAge = 0;
     }
 
     private int GetBucketIndex(ulong hash) => (int)(hash & _sizeMask);
@@ -118,11 +117,5 @@ public class TranspositionTable
             NodeType = nodeType,
             Age = _currentAge
         };
-    }
-
-    public (int used, int total) GetUsageStats()
-    {
-        var used = _table.Count(t => !t.IsEmpty);
-        return (used, _table.Length);
     }
 }

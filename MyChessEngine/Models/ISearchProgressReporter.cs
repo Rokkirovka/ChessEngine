@@ -8,7 +8,7 @@ public interface ISearchProgressReporter
         int depth, 
         int score, 
         ChessMove bestMove, 
-        ChessMove[] principalVariation,
+        ChessMove?[] principalVariation,
         long nodesVisited);
 
     void OnSearchFinished(EngineResult finalResult);

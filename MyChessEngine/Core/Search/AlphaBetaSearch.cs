@@ -1,7 +1,9 @@
 using MyChess.Hashing;
 using MyChess.Models.Moves;
+using MyChessEngine.Core.Debug;
 using MyChessEngine.Core.Services;
 using MyChessEngine.Models;
+using MyChessEngine.Models.Debug;
 using MyChessEngine.Transposition;
 
 namespace MyChessEngine.Core.Search;
@@ -15,15 +17,36 @@ public static class AlphaBetaSearch
         context.NodesVisited++;
 
         if (TerminalNodeChecker.IsTerminalNode(context.Game, out var terminalScore))
-            return TerminalNodeChecker.AdjustScoreForDepth(terminalScore, depthLeft);
+        {
+            var adjustedScore = TerminalNodeChecker.AdjustScoreForDepth(terminalScore, depthLeft);
+            if (context.Debugger?.IsEnabled == true)
+            {
+                context.Debugger.SetNodeInfo(isTerminalNode: true);
+                context.Debugger.MarkTechnique(SearchTechnique.None);
+            }
+            return adjustedScore;
+        }
 
         if (depthLeft == 0)
+        {
+            if (context.Debugger?.IsEnabled == true)
+            {
+                context.Debugger.MarkTechnique(SearchTechnique.QuiescenceSearch);
+            }
             return QuiescenceSearch.Search(context, depthLeft, context.MoveOrderingService, alpha, beta, color);
+        }
 
         var hash = ZobristHasher.CalculateInitialHash(context.Game.Board, context.Game.State);
-        if (TranspositionService.TryGetBestMove(context, hash, depthLeft, alpha, beta, out var ttScore,
-                out var nodeType))
+        if (TranspositionService.TryGetBestMove(context, hash, depthLeft, alpha, beta, 
+                out var ttScore, out var nodeType))
+        {
+            if (context.Debugger?.IsEnabled == true)
+            {
+                context.Debugger.MarkTechnique(SearchTechnique.TranspositionTable);
+                context.Debugger.SetNodeInfo(positionHash: hash);
+            }
             return HandleTranspositionResult(ttScore, nodeType, alpha, beta);
+        }
 
         return NullMovePruning.TryNullMovePruning(context, depthLeft, beta, color, out var nullMoveScore)
             ? nullMoveScore
@@ -58,11 +81,33 @@ public static class AlphaBetaSearch
         var moveIndex = 0;
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.ShouldStop is true)
+            {
+                if (context.Debugger?.IsEnabled == true)
+                {
+                    context.Debugger.MarkBranchRejected(BranchRejectionReason.SearchCancelled, "Search was cancelled");
+                }
+                return null;
+            }
+
+            // Enter node for this move
+            if (context.Debugger?.IsEnabled == true)
+            {
+                context.Debugger.EnterNode(move, depthLeft, alpha, beta, moveIndex, moves.Count());
+                context.Debugger.SetNodeInfo(nullMovePlayed: context.NullMovePlayedInCurrentBranch, positionHash: hash);
+            }
 
             var score = LateMoveReduction.SearchWithLmr(context, move, depthLeft, alpha, beta, color, moveIndex);
 
-            if (score is null) return null;
+            if (score is null)
+            {
+                if (context.Debugger?.IsEnabled == true)
+                {
+                    context.Debugger.MarkBranchRejected(BranchRejectionReason.SearchCancelled, "Search returned null");
+                    context.Debugger.ExitNode(null, null, null, false);
+                }
+                return null;
+            }
 
             if (score > alpha)
             {
@@ -76,7 +121,21 @@ public static class AlphaBetaSearch
             {
                 context.MoveOrderingService.UpdateHeuristics(context, move, depthLeft);
                 nodeType = NodeType.LowerBound;
+                
+                if (context.Debugger?.IsEnabled == true)
+                {
+                    context.Debugger.MarkTechnique(SearchTechnique.AlphaBetaPruning);
+                    context.Debugger.MarkBranchRejected(BranchRejectionReason.AlphaBetaCutoff, 
+                        $"Beta cutoff: score {score} >= beta {beta}");
+                    context.Debugger.ExitNode(score, nodeType.ToString(), move, false);
+                }
                 break;
+            }
+
+            // Exit node normally (not pruned)
+            if (context.Debugger?.IsEnabled == true)
+            {
+                context.Debugger.ExitNode(score, nodeType.ToString(), bestMoveInNode, true);
             }
 
             moveIndex++;

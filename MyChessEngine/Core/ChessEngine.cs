@@ -1,4 +1,5 @@
 using MyChess.Core;
+using MyChessEngine.Core.Debug;
 using MyChessEngine.Core.Evaluation.Moves;
 using MyChessEngine.Core.Evaluation.Moves.Components;
 using MyChessEngine.Core.Search;
@@ -29,7 +30,16 @@ public class ChessEngine
         if (searchCanceler != null) _iterativeDeepeningSearch.SetSearchCanceler(searchCanceler);
 
         var context = new SearchContext(game, searchParameters, new PvTableService(searchParameters.Depth),
-            _moveOrderingService);
+            _moveOrderingService, searchCanceler);
+        
+        // Initialize debugger if debugging is enabled
+        if (searchParameters.EnableDebugging)
+        {
+            var debugger = new SearchDebugger();
+            debugger.SetEnabled(true);
+            context.Debugger = debugger;
+        }
+
         return _iterativeDeepeningSearch.FindBestMove(context);
     }
 }

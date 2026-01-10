@@ -66,6 +66,7 @@ internal abstract class UciProtocol
             case "ucinewgame":
                 _game = new ChessGame();
                 _engine = new ChessEngine();
+                Canceler.Reset();
                 break;
         }
 
@@ -161,7 +162,7 @@ internal abstract class UciProtocol
 
     _engine.FindBestMoveWithIterativeDeepening(
         _game,
-        new SearchParameters { Depth = depth, UseTranspositionTable = false },
+        new SearchParameters { Depth = depth },
         Reporter,
         Canceler
     );

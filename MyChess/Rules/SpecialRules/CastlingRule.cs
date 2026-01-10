@@ -44,7 +44,7 @@ public static class CastlingRule
     private static bool CanCastle(bool kingSide, ChessColor color, ChessBoard board)
     {
         int rookPos, checkSquare1, checkSquare2, checkSquare3, checkSquare4 = -1;
-        var allPieces = (BitBoard)(board.Occupancies[0] | board.Occupancies[1]);
+        var allPieces = board.Occupancies[0] | board.Occupancies[1];
         
         if (color == ChessColor.White)
         {

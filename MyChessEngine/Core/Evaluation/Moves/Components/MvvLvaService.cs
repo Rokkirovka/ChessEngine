@@ -11,7 +11,7 @@ public static class MvvLvaService
         ];
     }
 
-    private static readonly int[,] MvvLvaTable = new int[12, 12]
+    private static readonly int[,] MvvLvaTable = new[,]
     {
         { 105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605 },
         { 104, 204, 304, 404, 504, 604, 104, 204, 304, 404, 504, 604 },
