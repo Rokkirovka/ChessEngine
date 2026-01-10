@@ -9,5 +9,4 @@ public record SearchParameters
     public bool UseNullMovePruning { get; init; } = true;
     public bool UseTranspositionTable { get; init; } = true;
     public bool UseLateMoveReduction { get; init; } = true;
-    public bool EnableDebugging { get; init; } = false;
 }

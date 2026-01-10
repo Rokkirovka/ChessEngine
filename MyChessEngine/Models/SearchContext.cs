@@ -1,6 +1,5 @@
 using MyChess.Core;
 using MyChessEngine.Core;
-using MyChessEngine.Core.Debug;
 using MyChessEngine.Core.Evaluation.Moves;
 using MyChessEngine.Core.Services;
 
@@ -20,7 +19,6 @@ public class SearchContext(
     public MoveOrderingService MoveOrderingService { get; } = moveOrderingService;
     public SearchCanceler? SearchCanceler { get; set; } = searchCanceler;
     public bool NullMovePlayedInCurrentBranch { get; set; }
-    public SearchDebugger? Debugger { get; set; }
 }
 
     
