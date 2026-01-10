@@ -8,26 +8,57 @@ namespace MyChessEngine.Core.Search;
 
 public static class AlphaBetaSearch
 {
-    public static int? SearchInternal(SearchContext context, int depthLeft, int alpha, int beta, int color)
+    public static int? SearchInternal(SearchContext context, int depthLeft, int alpha, int beta, int color, ChessMove? move = null, int moveIndex = 0)
     {
         if (context.SearchCanceler?.ShouldStop is true) return null;
 
         context.NodesVisited++;
 
+        var hash = ZobristHasher.CalculateInitialHash(context.Game.Board, context.Game.State);
+        
+        var debugNode = context.Debugger?.EnterNode(move, depthLeft, alpha, beta, moveIndex);
+        if (debugNode != null)
+        {
+            debugNode.PositionHash = hash;
+        }
+
         if (TerminalNodeChecker.IsTerminalNode(context.Game, out var terminalScore))
-            return TerminalNodeChecker.AdjustScoreForDepth(terminalScore, depthLeft);
+        {
+            var adjustedScore = TerminalNodeChecker.AdjustScoreForDepth(terminalScore, depthLeft);
+            context.Debugger?.MarkPruned(Debug.Models.PruningReason.TerminalNode, $"Terminal node: {terminalScore}");
+            context.Debugger?.ExitNode(adjustedScore, NodeType.Exact);
+            return adjustedScore;
+        }
 
         if (depthLeft == 0)
-            return QuiescenceSearch.Search(context, depthLeft, context.MoveOrderingService, alpha, beta, color);
-
-        var hash = ZobristHasher.CalculateInitialHash(context.Game.Board, context.Game.State);
+        {
+            context.Debugger?.MarkQuiescenceSearch();
+            var qScore = QuiescenceSearch.Search(context, depthLeft, context.MoveOrderingService, alpha, beta, color);
+            context.Debugger?.ExitNode(qScore, NodeType.Exact);
+            return qScore;
+        }
         if (TranspositionService.TryGetBestMove(context, hash, depthLeft, alpha, beta, 
                 out var ttScore, out var nodeType))
-            return HandleTranspositionResult(ttScore, nodeType, alpha, beta);
+        {
+            context.Debugger?.MarkTranspositionTable(ttScore, nodeType, hash);
+            var result = HandleTranspositionResult(ttScore, nodeType, alpha, beta);
+            context.Debugger?.ExitNode(result, nodeType);
+            return result;
+        }
 
-        return NullMovePruning.TryNullMovePruning(context, depthLeft, beta, color, out var nullMoveScore)
-            ? nullMoveScore
-            : SearchMoves(context, depthLeft, alpha, beta, color, hash);
+        var nullMoveResult = NullMovePruning.TryNullMovePruning(context, depthLeft, beta, color, out var nullMoveScore);
+        if (nullMoveResult)
+        {
+            context.Debugger?.ExitNode(nullMoveScore, NodeType.LowerBound);
+            return nullMoveScore;
+        }
+
+        var searchResult = SearchMoves(context, depthLeft, alpha, beta, color, hash);
+        var finalNodeType = searchResult.HasValue && alpha >= beta 
+            ? NodeType.LowerBound 
+            : (searchResult.HasValue ? NodeType.Exact : NodeType.UpperBound);
+        context.Debugger?.ExitNode(searchResult, finalNodeType, wasBetaCutoff: alpha >= beta);
+        return searchResult;
     }
 
     private static int? HandleTranspositionResult(int score, NodeType nodeType, int alpha, int beta)
@@ -54,15 +85,24 @@ public static class AlphaBetaSearch
             context.Game.GetAllPossibleMoves());
         ChessMove? bestMoveInNode = null;
         var nodeType = NodeType.UpperBound;
+        var originalAlpha = alpha;
 
         var moveIndex = 0;
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.ShouldStop is true)
+            {
+                context.Debugger?.MarkPruned(Debug.Models.PruningReason.SearchCancelled);
+                return null;
+            }
 
             var score = LateMoveReduction.SearchWithLmr(context, move, depthLeft, alpha, beta, color, moveIndex);
 
-            if (score is null) return null;
+            if (score is null)
+            {
+                context.Debugger?.MarkPruned(Debug.Models.PruningReason.SearchCancelled);
+                return null;
+            }
 
             if (score > alpha)
             {
@@ -76,6 +116,7 @@ public static class AlphaBetaSearch
             {
                 context.MoveOrderingService.UpdateHeuristics(context, move, depthLeft);
                 nodeType = NodeType.LowerBound;
+                context.Debugger?.MarkBetaCutoff(move, alpha);
                 break;
             }
 

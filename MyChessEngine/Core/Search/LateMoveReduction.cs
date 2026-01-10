@@ -20,15 +20,23 @@ public static class LateMoveReduction
 
         if (!shouldReduce)
         {
-            return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color);
+            return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color, moveIndex);
         }
 
-        var reducedScore = SearchWithReducedDepth(context, move, currentDepth, alpha, color);
+        var reducedScore = SearchWithReducedDepth(context, move, currentDepth, alpha, color, moveIndex);
         
         if (reducedScore is null) return null;
         if (context.SearchCanceler?.ShouldStop is true) return null;
         
-        return reducedScore > alpha ? SearchWithFullDepth(context, move, currentDepth, alpha, beta, color) : reducedScore;
+        var wasReSearch = reducedScore > alpha;
+        if (wasReSearch)
+        {
+            context.Debugger?.MarkLateMoveReduction(ReductionDepth, wasReSearch: true);
+            return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color, moveIndex);
+        }
+        
+        context.Debugger?.MarkLateMoveReduction(ReductionDepth, wasReSearch: false);
+        return reducedScore;
     }
 
     private static bool ShouldReduceMove(SearchContext context, ChessMove move, ChessGame game, int moveIndex,
@@ -44,21 +52,21 @@ public static class LateMoveReduction
     }
 
     private static int? SearchWithReducedDepth(SearchContext context, ChessMove move,
-        int currentDepth, int alpha, int color)
+        int currentDepth, int alpha, int color, int moveIndex)
     {
         context.Game.MakeMove(move);
         var reducedScore = -AlphaBetaSearch.SearchInternal(context, currentDepth - 1 - ReductionDepth,
-            -alpha - 1, -alpha, -color);
+            -alpha - 1, -alpha, -color, move, moveIndex);
         context.Game.UndoLastMove();
         return reducedScore;
     }
 
     private static int? SearchWithFullDepth(SearchContext context, ChessMove move,
-        int currentDepth, int alpha, int beta, int color)
+        int currentDepth, int alpha, int beta, int color, int moveIndex)
     {
         context.Game.MakeMove(move);
         var fullScore = -AlphaBetaSearch.SearchInternal(context, currentDepth - 1,
-            -beta, -alpha, -color);
+            -beta, -alpha, -color, move, moveIndex);
         context.Game.UndoLastMove();
         return fullScore;
     }

@@ -21,7 +21,7 @@ public static class NullMovePruning
         var enPassantPiece = context.Game.GetEnPassantTarget();
         context.Game.SetEnPassantTarget(null);
 
-        var searchResult = -AlphaBetaSearch.SearchInternal(context, currentDepth - 3, -beta, -beta + 1, -color);
+        var searchResult = -AlphaBetaSearch.SearchInternal(context, currentDepth - 3, -beta, -beta + 1, -color, null, 0);
         score = searchResult;
 
         context.Game.SetEnPassantTarget(enPassantPiece);
@@ -31,6 +31,12 @@ public static class NullMovePruning
         
         if (context.SearchCanceler?.ShouldStop is true) return false;
         if (score is null) return false;
+        
+        if (score >= beta)
+        {
+            context.Debugger?.MarkNullMovePruning(score);
+        }
+        
         return score >= beta;
     }
 }

@@ -14,6 +14,12 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var game = context.Game;
         var searchParameters = context.Parameters;
 
+        // Start debugger if enabled
+        if (context.Parameters.EnableDebugger && context.Debugger != null)
+        {
+            context.Debugger.StartSearch(context);
+        }
+
         var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves());
 
         var alpha = -1_000_000;
@@ -21,11 +27,12 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var color = game.CurrentPlayer == ChessColor.White ? 1 : -1;
         ChessMove? bestMove = null;
 
+        var moveIndex = 0;
         foreach (var move in moves)
         {
             if (context.SearchCanceler?.ShouldStop is true) return null;
             game.MakeMove(move);
-            var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color);
+            var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color, move, moveIndex);
             game.UndoLastMove();
 
             if (score is null) return null;
@@ -39,6 +46,7 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
             }
 
             moveOrderingService.UpdateHeuristics(context, move, searchParameters.Depth);
+            moveIndex++;
         }
 
         return new EngineResult(
