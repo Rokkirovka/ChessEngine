@@ -3,11 +3,10 @@ using MyChess.Services.Fen;
 using MyChessEngine.Core;
 using MyChessEngine.Models;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EngineTests;
 
-public class Printer(ITestOutputHelper testOutputHelper)
+public class Printer
 {
     [Fact]
     public void Print()

@@ -14,6 +14,7 @@ public class MoveStrategyFactory : IMoveStrategyFactory
             EnPassantMove => new EnPassantMoveStrategy(),
             CastlingMove => new CastlingMoveStrategy(),
             PromotionMove => new PromotionMoveStrategy(),
+            NullMove => new NullMoveStrategy(),
             _ => throw new ArgumentException($"Unknown move type: {move.GetType()}")
         };
     }

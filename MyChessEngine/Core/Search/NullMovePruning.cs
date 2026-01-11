@@ -1,3 +1,4 @@
+using MyChess.Models.Moves;
 using MyChessEngine.Models;
 
 namespace MyChessEngine.Core.Search;
@@ -17,21 +18,15 @@ public static class NullMovePruning
             return false;
         
         context.NullMovePlayedInCurrentBranch = true;
-        context.Game.SwapPlayers();
-        var enPassantPiece = context.Game.GetEnPassantTarget();
-        context.Game.SetEnPassantTarget(null);
-
+        context.Game.MakeMove(new NullMove());
         var searchResult = -AlphaBetaSearch.SearchInternal(context, currentDepth - 3, -beta, -beta + 1, -color);
         score = searchResult;
-
-        context.Game.SetEnPassantTarget(enPassantPiece);
-        context.Game.SwapPlayers();
+        context.Game.UndoLastMove();
         
         context.NullMovePlayedInCurrentBranch = false;
         
         if (context.SearchCanceler?.ShouldStop is true) return false;
-        if (score is null) return false;
-        
+
         return score >= beta;
     }
 }
