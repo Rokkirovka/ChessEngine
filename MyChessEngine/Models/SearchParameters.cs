@@ -9,6 +9,5 @@ public record SearchParameters
     public bool UseNullMovePruning { get; init; } = true;
     public bool UseTranspositionTable { get; init; } = true;
     public bool UseLateMoveReduction { get; init; } = true;
-    public bool EnableDebugger { get; init; } = false;
-    public int DebuggerMaxDepth { get; init; } = int.MaxValue;
+    public bool EnableDebugger { get; init; }
 }

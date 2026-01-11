@@ -1,5 +1,7 @@
 using MyChess.Core;
-using MyChessEngine.Core.Evaluation.Position;
+using MyChess.Services.Fen;
+using MyChessEngine.Core;
+using MyChessEngine.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -10,8 +12,11 @@ public class Printer(ITestOutputHelper testOutputHelper)
     [Fact]
     public void Print()
     {
-        var fen = "rnbqkbnr/pppp1ppp/8/4N3/8/8/PPPPPPPP/RNBQKB1R b KQkq - 0 2";
-        var board = new ChessGame(fen).Board;
-        testOutputHelper.WriteLine(new PositionEvaluator().Evaluate(board).ToString());
+        var fen = "8/P5k1/3r4/5p2/1P3P1p/RR2P1Pp/4K2r/8 w - - 4 45";
+        var game = new ChessGame(fen);
+        var playerMove = FenParser.CreateMoveFromString(game.Board, "e2f3");
+        game.MakeMove(playerMove);
+        var engine = new ChessEngine();
+        engine.FindBestMoveWithIterativeDeepening(game, new SearchParameters {Depth = 6, EnableDebugger = true});
     }
 }

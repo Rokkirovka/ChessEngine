@@ -29,13 +29,7 @@ public static class LateMoveReduction
         if (context.SearchCanceler?.ShouldStop is true) return null;
         
         var wasReSearch = reducedScore > alpha;
-        if (wasReSearch)
-        {
-            context.Debugger?.MarkLateMoveReduction(ReductionDepth, wasReSearch: true);
-            return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color, moveIndex);
-        }
-        
-        context.Debugger?.MarkLateMoveReduction(ReductionDepth, wasReSearch: false);
+        if (wasReSearch) return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color, moveIndex);
         return reducedScore;
     }
 

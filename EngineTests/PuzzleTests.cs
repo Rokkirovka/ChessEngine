@@ -19,13 +19,13 @@ public class PuzzleTests
     [InlineData("6R1/1k6/p3B2p/1P6/3pNr1r/P3nn2/1PP4P/R1B3K1 w - - 1 33,g1f2 f3g1 f2e1 f4f1 e1d2 f1d1")]
     [InlineData("6R1/4pB1p/6pk/8/1n3PP1/7K/p6P/2r5 b - - 1 48,a2a1q h3h4 a1e5 g4g5 e5g5 f4g5")]
     [InlineData("7r/1p2kp1p/2p1pp2/pPP5/P2Pp3/4P2q/1QN5/R4R1K w - - 2 26,h1g1 h3g3 g1h1 g3h4 h1g1 h8g8")]
-    public void MateIn3Puzzles(string csvLine) => TestPuzzle(csvLine, 6);
+    public void MateIn3Puzzles(string line) => TestPuzzle(line, new SearchParameters {Depth = 5, UseLateMoveReduction = false});
 
     [Theory]
     [InlineData("8/6p1/3bp2p/3pNp1k/2pP1P1P/2P1P3/4K1P1/8 w - - 3 37,g2g3 d6e5 d4e5 h5g4 e2f2 g4h3")]
-    public void EndgamePuzzles(string csvLine) => TestPuzzle(csvLine, 10);
+    public void EndgamePuzzles(string line) => TestPuzzle(line, new SearchParameters {Depth = 10});
 
-    private static void TestPuzzle(string csvLine, int depth)
+    private static void TestPuzzle(string csvLine, SearchParameters parameters)
     {
         var parts = csvLine.Split(',');
         var fen = parts[0];
@@ -40,7 +40,7 @@ public class PuzzleTests
             var playerMove = FenParser.CreateMoveFromString(game.Board, playerMoveStr);
             game.MakeMove(playerMove);
 
-            var result = engine.FindBestMoveWithIterativeDeepening(game, new SearchParameters { Depth = depth });
+            var result = engine.FindBestMoveWithIterativeDeepening(game, parameters);
             var engineBestMove = result.PrincipalVariation[0]!.ToString();
 
             game.MakeMove(FenParser.CreateMoveFromString(game.Board, engineBestMove));

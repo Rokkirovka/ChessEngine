@@ -14,12 +14,6 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var game = context.Game;
         var searchParameters = context.Parameters;
 
-        // Start debugger if enabled
-        if (context.Parameters.EnableDebugger && context.Debugger != null)
-        {
-            context.Debugger.StartSearch(context);
-        }
-
         var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves());
 
         var alpha = -1_000_000;
