@@ -44,7 +44,7 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         }
 
         return new EngineResult(
-            alpha * color, 
+            alpha, 
             bestMove, 
             context.NodesVisited, 
             context.PvTableService.GetPrincipalVariation()

@@ -47,6 +47,8 @@ public class IterativeDeepeningSearch(SearchOrchestrator searchOrchestrator)
                 currentResult.PrincipalVariation, 
                 currentResult.NodesVisited
             );
+            
+            if (Math.Abs(currentResult.Score) >= 100000 - baseContext.Parameters.Depth) break;
         }
         
         var finalResult = bestResult ?? throw new InvalidOperationException("No search results");
