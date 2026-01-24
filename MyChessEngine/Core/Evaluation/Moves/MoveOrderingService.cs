@@ -10,10 +10,12 @@ public class MoveOrderingService(
     HistoryTableService historyTableService)
 {
     private readonly MoveEvaluator _moveEvaluator = new MoveEvaluator(killerMovesService, historyTableService);
-    
-    public IEnumerable<ChessMove> OrderMoves(ChessBoard board, int ply, IEnumerable<ChessMove> moves)
+
+    public IEnumerable<ChessMove> OrderMoves(ChessBoard board, int ply, IEnumerable<ChessMove> moves,
+        ChessMove? pvMove = null)
     {
-        return moves.OrderByDescending(move => _moveEvaluator.EvaluateMove(board, ply, move));
+        return moves.OrderByDescending(move =>
+            pvMove is not null && move == pvMove ? 10_000_000 : _moveEvaluator.EvaluateMove(board, ply, move));
     }
 
     public void UpdateHeuristics(SearchContext context, ChessMove move, int depth)

@@ -14,7 +14,7 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var game = context.Game;
         var searchParameters = context.Parameters;
 
-        var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves());
+        var moves = moveOrderingService.OrderMoves(game.Board, game.Ply, game.GetAllPossibleMoves(), context.PrincipalVariation?[0]);
 
         var alpha = -1_000_000;
         const int beta = 1_000_000;

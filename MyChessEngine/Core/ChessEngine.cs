@@ -29,7 +29,7 @@ public class ChessEngine
         if (searchCanceler != null) _iterativeDeepeningSearch.SetSearchCanceler(searchCanceler);
 
         var context = new SearchContext(game, searchParameters, new PvTableService(searchParameters.Depth),
-            _moveOrderingService, searchCanceler);
+            _moveOrderingService, null, searchCanceler);
         return _iterativeDeepeningSearch.FindBestMove(context);
     }
 }

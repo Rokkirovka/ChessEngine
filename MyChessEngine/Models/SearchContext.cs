@@ -1,4 +1,5 @@
 using MyChess.Core;
+using MyChess.Models.Moves;
 using MyChessEngine.Core;
 using MyChessEngine.Core.Evaluation.Moves;
 using MyChessEngine.Core.Services;
@@ -10,6 +11,7 @@ public class SearchContext(
     SearchParameters parameters,
     PvTableService pvTableService,
     MoveOrderingService moveOrderingService,
+    ChessMove?[]? principalVariation = null,
     SearchCanceler? searchCanceler = null)
 {
     public ChessGame Game { get; } = game;
@@ -19,6 +21,7 @@ public class SearchContext(
     public MoveOrderingService MoveOrderingService { get; } = moveOrderingService;
     public SearchCanceler? SearchCanceler { get; set; } = searchCanceler;
     public bool NullMovePlayedInCurrentBranch { get; set; }
+    public ChessMove?[]? PrincipalVariation = principalVariation;
 }
 
     

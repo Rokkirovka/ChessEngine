@@ -24,17 +24,20 @@ public class IterativeDeepeningSearch(SearchOrchestrator searchOrchestrator)
         for (var depth = 1; depth <= baseContext.Parameters.Depth; depth++)
         {
             if (_searchCanceler is not null && _searchCanceler.ShouldStop) break;
+            var pv = depth == 1 ? null : bestResult!.PrincipalVariation;
             
             var iterationContext = new SearchContext(
                 baseContext.Game,
                 baseContext.Parameters with { Depth = depth },
                 baseContext.PvTableService,
                 baseContext.MoveOrderingService,
+                pv,
                 _searchCanceler
             )
             {
                 NodesVisited = 0
             };
+            
             var currentResult = searchOrchestrator.FindBestMove(iterationContext);
             
             if (currentResult is null) break;
