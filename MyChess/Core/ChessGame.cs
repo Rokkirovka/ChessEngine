@@ -1,3 +1,4 @@
+using MyChess.Core.Board;
 using MyChess.Hashing;
 using MyChess.Hashing.PositionHistory;
 using MyChess.Models;

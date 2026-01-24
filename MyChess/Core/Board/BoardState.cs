@@ -1,6 +1,6 @@
 using MyChess.Models;
 
-namespace MyChess.Core;
+namespace MyChess.Core.Board;
 
 public class BoardState
 {

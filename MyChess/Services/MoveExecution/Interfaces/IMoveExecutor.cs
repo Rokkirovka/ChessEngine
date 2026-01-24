@@ -1,4 +1,4 @@
-using MyChess.Core;
+using MyChess.Core.Board;
 using MyChess.Models.Moves;
 
 namespace MyChess.Services.MoveExecution.Interfaces;

@@ -1,4 +1,4 @@
-using MyChess.Core;
+using MyChess.Core.Board;
 
 namespace MyChessEngine.Core.Evaluation.Position.Interfaces;
 

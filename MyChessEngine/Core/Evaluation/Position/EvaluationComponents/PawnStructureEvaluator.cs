@@ -1,4 +1,4 @@
-using MyChess.Core;
+using MyChess.Core.Board;
 using MyChessEngine.Core.Evaluation.Position.Interfaces;
 using MyChessEngine.Utils;
 

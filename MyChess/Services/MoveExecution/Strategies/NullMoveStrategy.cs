@@ -1,5 +1,4 @@
-using MyChess.Core;
-using MyChess.Models;
+using MyChess.Core.Board;
 using MyChess.Models.MoveHistoryItems;
 using MyChess.Models.Moves;
 using MyChess.Services.MoveExecution.Interfaces;

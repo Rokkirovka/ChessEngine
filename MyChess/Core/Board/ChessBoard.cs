@@ -1,7 +1,7 @@
 using MyChess.Models;
 using MyChess.Models.Pieces;
 
-namespace MyChess.Core;
+namespace MyChess.Core.Board;
 
 public class ChessBoard
 {

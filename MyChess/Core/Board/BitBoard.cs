@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace MyChess.Core;
+namespace MyChess.Core.Board;
 
 public readonly record struct BitBoard(ulong Value = 0UL)
 {
