@@ -8,7 +8,6 @@ namespace MyChessEngine.Core.Search;
 
 public static class QuiescenceSearch
 {
-    private static readonly TranspositionTable QuiescenceTable = new(1 << 16, 2);
     private static readonly PositionEvaluator PositionEvaluator = new();
 
     public static int? Search(SearchContext context, int depth, MoveOrderingService moveOrderingService, int alpha,
@@ -20,23 +19,10 @@ public static class QuiescenceSearch
         var game = context.Game;
         var hash = ZobristHasher.CalculateInitialHash(game.Board, game.State);
 
-        if (QuiescenceTable.TryGet(hash, out var entry, context))
+        if (TranspositionService.TryGetBestMove(context, hash, 0, alpha, beta, out var ttScore, out var transpositionNodeType))
         {
-            switch (entry.NodeType)
-            {
-                case NodeType.Exact:
-                    return entry.Score;
-                case NodeType.LowerBound:
-                    if (entry.Score >= beta) return beta;
-                    alpha = Math.Max(alpha, entry.Score);
-                    break;
-                case NodeType.UpperBound:
-                    if (entry.Score <= alpha) return alpha;
-                    beta = Math.Min(beta, entry.Score);
-                    break;
-            }
-
-            if (alpha >= beta) return entry.NodeType == NodeType.LowerBound ? beta : alpha;
+            var result = HandleTranspositionResult(ttScore, transpositionNodeType, alpha, beta);
+            if (result.HasValue) return result.Value;
         }
 
         if (game.IsCheckmate) return -100000 - depth;
@@ -88,7 +74,23 @@ public static class QuiescenceSearch
             returnValue = alpha;
         }
 
-        QuiescenceTable.Store(hash, scoreToStore, 0, null, nodeType);
+        TranspositionService.Store(context, hash, scoreToStore, 0, null, nodeType);
         return returnValue;
+    }
+
+    private static int? HandleTranspositionResult(int score, NodeType nodeType, int alpha, int beta)
+    {
+        switch (nodeType)
+        {
+            case NodeType.Exact: return score;
+            case NodeType.LowerBound:
+                if (score >= beta) return beta;
+                break;
+            case NodeType.UpperBound:
+                if (score <= alpha) return alpha;
+                break;
+        }
+
+        return null;
     }
 }
