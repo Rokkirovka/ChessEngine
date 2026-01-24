@@ -9,6 +9,7 @@ namespace MyChessEngine.Core.Search;
 public static class QuiescenceSearch
 {
     private static readonly PositionEvaluator PositionEvaluator = new();
+    private const int Delta = 1200;
 
     public static int? Search(SearchContext context, int depth, MoveOrderingService moveOrderingService, int alpha,
         int beta, int color)
@@ -29,6 +30,8 @@ public static class QuiescenceSearch
         if (game.IsStalemate || game.IsDrawByRepetition) return 0;
 
         var evaluation = PositionEvaluator.Evaluate(game.Board) * color;
+        if (evaluation + Delta <= alpha) return alpha;
+
 
         if (evaluation >= beta) return beta;
         if (evaluation > alpha) alpha = evaluation;
