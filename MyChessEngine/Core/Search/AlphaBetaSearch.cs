@@ -34,11 +34,8 @@ public static class AlphaBetaSearch
             return result;
         }
 
-        var nullMoveResult = NullMovePruning.TryNullMovePruning(context, depthLeft, beta, color, out var nullMoveScore);
-        if (nullMoveResult)
-        {
-            return nullMoveScore;
-        }
+        var nullMoveResult = NullMovePruning.TryNullMovePruning(context, depthLeft, beta, color);
+        if (nullMoveResult) return beta;
 
         var searchResult = SearchMoves(context, depthLeft, alpha, beta, color, hash);
         return searchResult;

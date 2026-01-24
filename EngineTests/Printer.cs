@@ -1,21 +1,20 @@
 using MyChess.Core;
-using MyChess.Services.Fen;
 using MyChessEngine.Core;
 using MyChessEngine.Models;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EngineTests;
 
-public class Printer
+public class Printer(ITestOutputHelper testOutputHelper)
 {
     [Fact]
     public void Print()
     {
-        var fen = "8/P5k1/3r4/5p2/1P3P1p/RR2P1Pp/4K2r/8 w - - 4 45";
+        const string fen = "rnbqkb1r/ppp1pppp/5n2/3p4/3P1B2/2N5/PPP1PPPP/R2QKBNR b KQkq - 1 3";
         var game = new ChessGame(fen);
-        var playerMove = FenParser.CreateMoveFromString(game.Board, "e2f3");
-        game.MakeMove(playerMove);
         var engine = new ChessEngine();
-        engine.FindBestMoveWithIterativeDeepening(game, new SearchParameters {Depth = 6, EnableDebugger = true});
+        var res = engine.FindBestMoveWithIterativeDeepening(game, new SearchParameters { Depth = 5, UseLateMoveReduction = false});
+        testOutputHelper.WriteLine(res.BestMove!.ToString());
     }
 }

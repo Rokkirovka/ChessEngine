@@ -52,21 +52,6 @@ public class ChessGame
         UpdateZobristHash();
     }
 
-    public void SwapPlayers()
-    {
-        State.ChangeColor();
-    }
-
-    public int? GetEnPassantTarget()
-    {
-        return State.EnPassantTarget;
-    }
-
-    public void SetEnPassantTarget(int? cell)
-    {
-        State.EnPassantTarget = cell;
-    }
-
     public ChessColor CurrentPlayer => State.CurrentMoveColor;
 
     public IChessPiece? GetPiece(int cell) => Board.GetPiece(cell);

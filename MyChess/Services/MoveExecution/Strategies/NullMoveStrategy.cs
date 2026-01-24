@@ -16,9 +16,6 @@ public class NullMoveStrategy : IMoveStrategy
     public void Execute(ChessMove move, ChessBoard board, BoardState boardState)
     {
         boardState.EnPassantTarget = null;
-        boardState.CurrentMoveColor = boardState.CurrentMoveColor == ChessColor.White 
-            ? ChessColor.Black 
-            : ChessColor.White;
     }
 
     public void Undo(MoveHistoryItem historyItem, ChessBoard board, BoardState boardState)

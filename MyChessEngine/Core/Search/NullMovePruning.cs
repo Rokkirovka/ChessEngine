@@ -5,10 +5,8 @@ namespace MyChessEngine.Core.Search;
 
 public static class NullMovePruning
 {
-    public static bool TryNullMovePruning(SearchContext context, int currentDepth, int beta, int color, out int? score)
+    public static bool TryNullMovePruning(SearchContext context, int currentDepth, int beta, int color)
     {
-        score = null;
-        
         if (context.SearchCanceler?.ShouldStop is true) return false;
         
         if (currentDepth <= 2 || 
@@ -20,13 +18,12 @@ public static class NullMovePruning
         context.NullMovePlayedInCurrentBranch = true;
         context.Game.MakeMove(new NullMove());
         var searchResult = -AlphaBetaSearch.SearchInternal(context, currentDepth - 3, -beta, -beta + 1, -color);
-        score = searchResult;
         context.Game.UndoLastMove();
         
         context.NullMovePlayedInCurrentBranch = false;
         
         if (context.SearchCanceler?.ShouldStop is true) return false;
 
-        return score >= beta;
+        return searchResult >= beta;
     }
 }
