@@ -10,7 +10,7 @@ public static class AlphaBetaSearch
 {
     public static int? SearchInternal(SearchContext context, int depthLeft, int alpha, int beta, int color, ChessMove? move = null, int moveIndex = 0)
     {
-        if (context.SearchCanceler?.ShouldStop is true) return null;
+        if (context.SearchCanceler?.MustStop is true) return null;
 
         context.NodesVisited++;
 
@@ -69,7 +69,7 @@ public static class AlphaBetaSearch
         var moveIndex = 0;
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.MustStop is true) return null;
 
             var score = LateMoveReduction.SearchWithLmr(context, move, depthLeft, alpha, beta, color, moveIndex);
 

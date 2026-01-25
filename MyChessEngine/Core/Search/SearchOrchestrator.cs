@@ -24,13 +24,13 @@ public class SearchOrchestrator(MoveOrderingService moveOrderingService)
         var moveIndex = 0;
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.MustStop is true) return null;
             game.MakeMove(move);
             var score = -AlphaBetaSearch.SearchInternal(context, searchParameters.Depth - 1, -beta, -alpha, -color, move, moveIndex);
             game.UndoLastMove();
 
             if (score is null) return null;
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.MustStop is true) return null;
 
             if (score > alpha)
             {

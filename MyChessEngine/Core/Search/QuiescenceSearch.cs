@@ -15,7 +15,7 @@ public static class QuiescenceSearch
         int beta, int color)
     {
         var originalAlpha = alpha;
-        if (context.SearchCanceler?.ShouldStop is true) return null;
+        if (context.SearchCanceler?.MustStop is true) return null;
         if (!context.Parameters.UseQuiescenceSearch) return PositionEvaluator.Evaluate(context.Game.Board) * color;
         var game = context.Game;
         var hash = ZobristHasher.CalculateInitialHash(game.Board, game.State);
@@ -41,7 +41,7 @@ public static class QuiescenceSearch
 
         foreach (var move in moves)
         {
-            if (context.SearchCanceler?.ShouldStop is true) return null;
+            if (context.SearchCanceler?.MustStop is true) return null;
 
             context.NodesVisited++;
             game.MakeMove(move);

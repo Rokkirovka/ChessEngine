@@ -7,7 +7,7 @@ public static class NullMovePruning
 {
     public static bool TryNullMovePruning(SearchContext context, int currentDepth, int beta, int color)
     {
-        if (context.SearchCanceler?.ShouldStop is true) return false;
+        if (context.SearchCanceler?.MustStop is true) return false;
         
         if (currentDepth <= 2 || 
             context.Game.IsKingInCheck() || 
@@ -22,7 +22,7 @@ public static class NullMovePruning
         
         context.NullMovePlayedInCurrentBranch = false;
         
-        if (context.SearchCanceler?.ShouldStop is true) return false;
+        if (context.SearchCanceler?.MustStop is true) return false;
 
         return searchResult >= beta;
     }

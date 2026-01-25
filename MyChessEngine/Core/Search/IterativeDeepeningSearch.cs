@@ -23,7 +23,7 @@ public class IterativeDeepeningSearch(SearchOrchestrator searchOrchestrator)
         
         for (var depth = 1; depth <= baseContext.Parameters.Depth; depth++)
         {
-            if (_searchCanceler is not null && _searchCanceler.ShouldStop) break;
+            if (_searchCanceler is not null && (_searchCanceler.ShouldStop || _searchCanceler.MustStop)) break;
             var pv = depth == 1 ? null : bestResult!.PrincipalVariation;
             
             var iterationContext = new SearchContext(

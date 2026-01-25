@@ -13,7 +13,7 @@ public static class LateMoveReduction
     public static int? SearchWithLmr(SearchContext context, ChessMove move, int currentDepth, 
         int alpha, int beta, int color, int moveIndex)
     {
-        if (context.SearchCanceler?.ShouldStop is true) return null;
+        if (context.SearchCanceler?.MustStop is true) return null;
         
         var isCheck = context.Game.IsKingInCheck();
         var shouldReduce = ShouldReduceMove(context, move, context.Game, moveIndex, isCheck, currentDepth);
@@ -26,7 +26,7 @@ public static class LateMoveReduction
         var reducedScore = SearchWithReducedDepth(context, move, currentDepth, alpha, color, moveIndex);
         
         if (reducedScore is null) return null;
-        if (context.SearchCanceler?.ShouldStop is true) return null;
+        if (context.SearchCanceler?.MustStop is true) return null;
         
         var wasReSearch = reducedScore > alpha;
         if (wasReSearch) return SearchWithFullDepth(context, move, currentDepth, alpha, beta, color, moveIndex);
@@ -36,7 +36,7 @@ public static class LateMoveReduction
     private static bool ShouldReduceMove(SearchContext context, ChessMove move, ChessGame game, int moveIndex,
         bool isCheck, int currentDepth)
     {
-        if (context.SearchCanceler?.ShouldStop is true) return false;
+        if (context.SearchCanceler?.MustStop is true) return false;
         if (context.Parameters.UseLateMoveReduction is false) return false;
         if (currentDepth < MinDepthForReduction) return false;
         if (moveIndex < FullDepthMoves) return false;
